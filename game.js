@@ -77,11 +77,14 @@ class FusionGame {
 
   resize() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.style.width = CANVAS_W + 'px';
-    this.canvas.style.height = CANVAS_H + 'px';
+    const w = rect.width;
+    const h = rect.height;
+    // Scale canvas to fit parent while maintaining aspect ratio
+    this.canvas.style.width = w + 'px';
+    this.canvas.style.height = h + 'px';
     this.scale = window.devicePixelRatio || 1;
-    this.canvas.width = CANVAS_W * this.scale;
-    this.canvas.height = CANVAS_H * this.scale;
+    this.canvas.width = w * this.scale;
+    this.canvas.height = h * this.scale;
     this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
   }
 
@@ -129,8 +132,8 @@ class FusionGame {
   bindEvents() {
     this.canvas.addEventListener('mousemove', (e) => this.handleMove(e));
     this.canvas.addEventListener('click', (e) => this.handleDrop(e));
-    this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this.handleMove(e.touches[0]); }, { passive: false });
-    this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this.handleMove(e.touches[0]); }, { passive: false });
+    this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this.handleTouchMove(e); }, { passive: false });
+    this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this.handleTouchMove(e); }, { passive: false });
     this.canvas.addEventListener('touchend', (e) => { e.preventDefault(); this.handleDrop(e.changedTouches[0]); }, { passive: false });
 
     document.getElementById('btn-pause').addEventListener('click', () => this.togglePause());
@@ -190,7 +193,20 @@ class FusionGame {
   handleMove(e) {
     if (!this.isAiming || this.gameOver || this.paused) return;
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (CANVAS_W / rect.width);
+    const scaleX = CANVAS_W / rect.width;
+    const x = (e.clientX - rect.left) * scaleX;
+    const shapes = this.getShapes();
+    const r = shapes[this.currentShape].radius;
+    this.dropX = Math.max(r + 4, Math.min(CANVAS_W - r - 4, x));
+  }
+
+  handleTouchMove(e) {
+    if (!this.isAiming || this.gameOver || this.paused) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = CANVAS_W / rect.width;
+    const x = (touch.clientX - rect.left) * scaleX;
     const shapes = this.getShapes();
     const r = shapes[this.currentShape].radius;
     this.dropX = Math.max(r + 4, Math.min(CANVAS_W - r - 4, x));
