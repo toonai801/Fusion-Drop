@@ -92,9 +92,11 @@ class FusionGame {
     const intro = document.getElementById('intro-screen');
     const btnStart = document.getElementById('btn-intro-start');
     intro.classList.remove('hidden');
+    this.canvas.style.pointerEvents = 'none';
     
     btnStart.addEventListener('click', () => {
       intro.classList.add('hidden');
+      this.canvas.style.pointerEvents = 'auto';
       this.showStartScreen();
     }, { once: true });
   }
@@ -102,6 +104,7 @@ class FusionGame {
   showStartScreen() {
     this.paused = true;
     document.getElementById('start-screen').classList.remove('hidden');
+    this.canvas.style.pointerEvents = 'none';
     const startName = document.getElementById('start-name');
     const btnStart = document.getElementById('btn-start');
     startName.value = '';
@@ -118,6 +121,7 @@ class FusionGame {
       this.sounds.init();
       this.sounds.startAmbient();
       document.getElementById('start-screen').classList.add('hidden');
+      this.canvas.style.pointerEvents = 'auto';
       startName.style.borderColor = 'rgba(0, 212, 255, 0.4)';
       this.updateHighScoreDisplay();
       this.renderLeaderboard();
@@ -648,6 +652,7 @@ class FusionGame {
     if (this.gameOver) return;
     this.paused = !this.paused;
     document.getElementById('pause-overlay').classList.toggle('hidden', !this.paused);
+    this.canvas.style.pointerEvents = this.paused ? 'none' : 'auto';
   }
 
   endGame() {
@@ -656,6 +661,7 @@ class FusionGame {
     this.sounds.playGameOver();
     document.getElementById('final-score').textContent = this.score;
     document.getElementById('game-over').classList.remove('hidden');
+    this.canvas.style.pointerEvents = 'none';
   }
 
   async saveScore() {
@@ -737,6 +743,7 @@ class FusionGame {
     document.getElementById('pause-overlay').classList.add('hidden');
     document.getElementById('btn-save').disabled = false;
     document.getElementById('btn-save').textContent = 'Save Score';
+    this.canvas.style.pointerEvents = 'auto';
     this.updateHighScoreDisplay();
     this.renderLeaderboard();
     this.renderShapeChain();

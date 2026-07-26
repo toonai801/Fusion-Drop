@@ -484,7 +484,14 @@ body {
   75% { transform: translateX(3px); }
 }
 
-/* Responsive */
+/* Disable canvas interaction when overlay is visible */
+#game-area:has(.overlay:not(.hidden)) #game-canvas,
+#game-area:has(#intro-screen:not(.hidden)) #game-canvas,
+#game-area:has(#game-over:not(.hidden)) #game-canvas,
+#game-area:has(#pause-overlay:not(.hidden)) #game-canvas,
+#game-area:has(#start-screen:not(.hidden)) #game-canvas {
+  pointer-events: none;
+}
 @media (max-width: 850px) {
   #game-wrapper {
     flex-direction: column;
