@@ -3,41 +3,80 @@ const CANVAS_H = 600;
 const DROP_LINE_Y = 90;
 const MAX_PREVIEW_TIER = 2;
 
-class SuikaGame {
+class FusionGame {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
     this.nextCanvas = document.getElementById('next-canvas');
     this.nextCtx = this.nextCanvas.getContext('2d');
 
-    // Responsive sizing
     this.resize();
     window.addEventListener('resize', () => this.resize());
 
-    this.physics = new Physics(0.3, 0.97, 0.3);
+    this.physics = new Physics(0.3, 0.98, 0.2);
     this.entities = [];
     this.score = 0;
-    this.highScore = parseInt(localStorage.getItem('suika_high_score') || '0');
-    this.nextFruit = randomFruitTier(MAX_PREVIEW_TIER);
-    this.currentFruit = randomFruitTier(MAX_PREVIEW_TIER);
+    this.highScore = 0;
+    this.level = 1;
+    this.currentTheme = THEMES[0];
+    this.shapes = this.currentTheme.shapes;
+    this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
+    this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.dropX = CANVAS_W / 2;
     this.isAiming = true;
-    this.isDropping = false;
-    this.dropCooldown = 0;
+    this.canDrop = true;
+    this.dropTimer = 0;
     this.gameOver = false;
     this.paused = false;
     this.mergeParticles = [];
-    this.leaderboard = JSON.parse(localStorage.getItem('suika_leaderboard') || '[]');
+    this.scorePopups = [];
+    this.ambientParticles = [];
+    this.mergeFlashes = [];
+    this.leaderboard = [];
+    this.playerName = '';
+    this.sounds = new SoundManager();
 
-    this.updateHighScoreDisplay();
-    this.renderLeaderboard();
+    this.renderShapeChain();
     this.bindEvents();
+    this.showIntroScreen();
+    this.fetchLeaderboard();
+    this.startActivePolling();
+    this.initAmbientParticles();
     this.loop();
+  }
+
+  getShapes() {
+    return getCurrentShapes(this.level);
+  }
+
+  getShapeCount() {
+    return this.getShapes().length;
+  }
+
+  getPhysicsSpeed() {
+    return getPhysicsSpeed(this.level);
+  }
+
+  getDeathLine() {
+    return DROP_LINE_Y + getDeathLineOffset(this.level);
+  }
+
+  randomShapeTier(maxTier) {
+    const weights = [];
+    for (let i = 0; i <= maxTier; i++) {
+      weights.push(Math.pow(0.55, i));
+    }
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < weights.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return i;
+    }
+    return 0;
   }
 
   resize() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
-    const scale = Math.min(rect.width / CANVAS_W, rect.height / CANVAS_H);
     this.canvas.style.width = CANVAS_W + 'px';
     this.canvas.style.height = CANVAS_H + 'px';
     this.scale = window.devicePixelRatio || 1;
@@ -46,22 +85,60 @@ class SuikaGame {
     this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
   }
 
+  showIntroScreen() {
+    const intro = document.getElementById('intro-screen');
+    const btnStart = document.getElementById('btn-intro-start');
+    intro.classList.remove('hidden');
+    
+    btnStart.addEventListener('click', () => {
+      intro.classList.add('hidden');
+      this.showStartScreen();
+    }, { once: true });
+  }
+
+  showStartScreen() {
+    this.paused = true;
+    document.getElementById('start-screen').classList.remove('hidden');
+    const startName = document.getElementById('start-name');
+    const btnStart = document.getElementById('btn-start');
+    startName.value = '';
+    startName.focus();
+
+    const onStart = () => {
+      const name = startName.value.trim();
+      if (!name) {
+        startName.style.borderColor = 'rgba(255, 0, 102, 0.6)';
+        return;
+      }
+      this.playerName = name;
+      this.paused = false;
+      this.sounds.init();
+      this.sounds.startAmbient();
+      document.getElementById('start-screen').classList.add('hidden');
+      startName.style.borderColor = 'rgba(0, 212, 255, 0.4)';
+      this.updateHighScoreDisplay();
+      this.renderLeaderboard();
+    };
+
+    btnStart.addEventListener('click', onStart, { once: true });
+    startName.addEventListener('keydown', (e) => {
+      if (e.code === 'Enter') onStart();
+    }, { once: true });
+  }
+
   bindEvents() {
-    // Mouse
     this.canvas.addEventListener('mousemove', (e) => this.handleMove(e));
     this.canvas.addEventListener('click', (e) => this.handleDrop(e));
     this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this.handleMove(e.touches[0]); }, { passive: false });
     this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this.handleMove(e.touches[0]); }, { passive: false });
     this.canvas.addEventListener('touchend', (e) => { e.preventDefault(); this.handleDrop(e.changedTouches[0]); }, { passive: false });
 
-    // Buttons
     document.getElementById('btn-pause').addEventListener('click', () => this.togglePause());
     document.getElementById('btn-restart').addEventListener('click', () => this.restart());
     document.getElementById('btn-save').addEventListener('click', () => this.saveScore());
     document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
 
-    // Keyboard
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'Enter') {
         if (!this.gameOver && !this.paused) this.drop();
@@ -70,53 +147,134 @@ class SuikaGame {
     });
   }
 
+  async fetchLeaderboard() {
+    try {
+      const res = await fetch('http://localhost:8090/api/scores');
+      if (!res.ok) throw new Error('Failed to fetch scores');
+      this.leaderboard = await res.json();
+      this.renderLeaderboard();
+    } catch (e) {
+      console.error('Leaderboard fetch failed:', e);
+    }
+  }
+
+  async fetchActivePlayers() {
+    try {
+      const res = await fetch('http://localhost:8090/api/active');
+      if (!res.ok) throw new Error('Failed to fetch active players');
+      const active = await res.json();
+      this.renderActivePlayers(active);
+    } catch (e) {
+      console.error('Active players fetch failed:', e);
+    }
+  }
+
+  async reportActive() {
+    if (!this.playerName || this.paused) return;
+    try {
+      await fetch('http://localhost:8090/api/active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: this.playerName, score: this.score }),
+      });
+    } catch (e) {
+      // Silent fail for heartbeats
+    }
+  }
+
+  startActivePolling() {
+    setInterval(() => this.reportActive(), 5000);
+    setInterval(() => this.fetchActivePlayers(), 5000);
+  }
+
   handleMove(e) {
-    if (!this.isAiming || this.gameOver || this.paused || this.isDropping) return;
+    if (!this.isAiming || this.gameOver || this.paused) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (CANVAS_W / rect.width);
-    const r = FRUITS[this.currentFruit].radius;
+    const shapes = this.getShapes();
+    const r = shapes[this.currentShape].radius;
     this.dropX = Math.max(r + 4, Math.min(CANVAS_W - r - 4, x));
   }
 
   handleDrop(e) {
-    if (this.gameOver || this.paused || this.isDropping) return;
+    if (this.gameOver || this.paused || !this.canDrop) return;
     this.drop();
   }
 
   drop() {
-    if (!this.isAiming || this.isDropping) return;
+    if (!this.isAiming || !this.canDrop) return;
     this.isAiming = false;
-    this.isDropping = true;
+    this.canDrop = false;
+    this.dropTimer = 0;
 
-    const f = FRUITS[this.currentFruit];
+    const shapes = this.getShapes();
+    const s = shapes[this.currentShape];
     this.entities.push({
       x: this.dropX,
-      y: -f.radius * 2,
+      y: -s.radius * 2,
       vx: 0,
-      vy: 2,
-      radius: f.radius,
-      fruitType: this.currentFruit,
+      vy: 2 * this.getPhysicsSpeed(),
+      radius: s.radius,
+      shapeType: this.currentShape,
       active: true,
-      settled: false,
       settleTimer: 0,
       spawnScale: 0,
       targetScale: 1,
+      justDropped: true,
     });
 
-    // Shift preview to current
-    this.currentFruit = this.nextFruit;
-    this.nextFruit = randomFruitTier(MAX_PREVIEW_TIER);
+    this.currentShape = this.nextShape;
+    this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
+    this.sounds.playDrop();
+  }
+
+  checkLevelComplete() {
+    // Check if player has two of the biggest shape
+    const shapes = this.getShapes();
+    const biggestType = shapes.length - 1;
+    const biggestCount = this.entities.filter(e => e.active && e.shapeType === biggestType).length;
+    
+    if (biggestCount >= 2) {
+      // Level complete!
+      if (this.level < THEMES.length) {
+        this.advanceLevel();
+      }
+    }
+  }
+
+  advanceLevel() {
+    const oldLevel = this.level;
+    this.level++;
+    this.currentTheme = THEMES[Math.min(this.level - 1, THEMES.length - 1)];
+    
+    // Transform existing entities to new theme
+    for (const e of this.entities) {
+      if (!e.active) continue;
+      const transformed = transformEntityToTheme(e, oldLevel, this.level);
+      e.shapeType = transformed.shapeType;
+      e.radius = transformed.radius;
+    }
+    
+    // Update physics
+    this.physics = new Physics(0.3 * this.getPhysicsSpeed(), 0.98, 0.2);
+    
+    // Play level complete sound
+    this.sounds.playLevelComplete();
+    
+    // Update UI
+    this.renderShapeChain();
+    
+    // Add level up notification
+    this.addScorePopup(CANVAS_W / 2, CANVAS_H / 2, 'LEVEL ' + this.level + '!');
   }
 
   update() {
     if (this.gameOver || this.paused) return;
 
-    this.dropCooldown = Math.max(0, this.dropCooldown - 1);
-
-    // Update entities
+    const shapes = this.getShapes();
+    const deathLine = this.getDeathLine();
     this.physics.update(this.entities, CANVAS_W - 4, CANVAS_H - 4);
 
-    // Entity logic: merging, settling, game over
     const toMerge = [];
     const n = this.entities.length;
 
@@ -130,38 +288,29 @@ class SuikaGame {
         if (a.spawnScale > a.targetScale) a.spawnScale = a.targetScale;
       }
 
-      // Settle check
-      if (Math.abs(a.vy) < 0.15 && Math.abs(a.vx) < 0.15 && a.y + a.radius < CANVAS_H - 6) {
+      // Count frames above death line for game over
+      if (a.y - a.radius < deathLine && a.y > 0) {
         a.settleTimer++;
-        if (a.settleTimer > 15) {
-          a.settled = true;
-        }
-      } else {
-        a.settleTimer = 0;
-      }
-
-      // Game over: fruit above drop line
-      if (a.y - a.radius < DROP_LINE_Y && a.settled) {
-        // Check if it's been there a bit
-        if (a.settleTimer > 60) {
+        if (a.settleTimer > 180) {
           this.endGame();
           return;
         }
+      } else if (a.y - a.radius >= deathLine) {
+        a.settleTimer = 0;
       }
 
       // Merge check
       for (let j = i + 1; j < n; j++) {
         const b = this.entities[j];
         if (!b.active) continue;
-        if (a.fruitType !== b.fruitType) continue;
-        if (a.fruitType >= FRUITS.length - 1) continue; // Can't merge max fruit
+        if (a.shapeType !== b.shapeType) continue;
+        if (a.shapeType >= shapes.length - 1) continue;
 
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < (a.radius + b.radius) * 0.85) {
-          // Check if not already queued
+        if (dist < a.radius + b.radius) {
           let already = false;
           for (const m of toMerge) {
             if ((m.a === i && m.b === j) || (m.a === j && m.b === i) || m.a === i || m.b === i || m.a === j || m.b === j) {
@@ -169,126 +318,209 @@ class SuikaGame {
               break;
             }
           }
-          if (!already) {
-            toMerge.push({ a: i, b: j });
-          }
+          if (!already) toMerge.push({ a: i, b: j });
         }
       }
     }
 
     // Process merges
     const merged = new Set();
+    let biggestMerged = false;
     for (const m of toMerge) {
       if (merged.has(m.a) || merged.has(m.b)) continue;
-
       const a = this.entities[m.a];
       const b = this.entities[m.b];
       if (!a.active || !b.active) continue;
 
-      // Create merged fruit
-      const newType = a.fruitType + 1;
-      const newF = FRUITS[newType];
+      const newType = a.shapeType + 1;
+      const newS = shapes[newType];
       const mx = (a.x + b.x) / 2;
       const my = (a.y + b.y) / 2;
 
-      // Particles
+      // Check if this is merging two biggest shapes
+      if (a.shapeType === shapes.length - 1) {
+        biggestMerged = true;
+        this.triggerScreenShake();
+      }
+
       for (let p = 0; p < 12; p++) {
         const angle = (p / 12) * Math.PI * 2;
         this.mergeParticles.push({
-          x: mx,
-          y: my,
+          x: mx, y: my,
           vx: Math.cos(angle) * (2 + Math.random() * 3),
           vy: Math.sin(angle) * (2 + Math.random() * 3),
-          life: 1.0,
-          color: newF.color,
-          size: 3 + Math.random() * 4,
+          life: 1.0, color: newS.glow, size: 3 + Math.random() * 4,
         });
       }
 
       this.entities.push({
-        x: mx,
-        y: my - 2,
-        vx: (a.vx + b.vx) * 0.3,
-        vy: -1.5,
-        radius: newF.radius,
-        fruitType: newType,
+        x: mx, y: my - 2,
+        vx: (a.vx + b.vx) * 0.3, vy: -1.5,
+        radius: newS.radius,
+        shapeType: newType,
         active: true,
-        settled: false,
         settleTimer: 0,
-        spawnScale: 0.1,
-        targetScale: 1,
+        spawnScale: 0.1, targetScale: 1,
       });
 
       a.active = false;
       b.active = false;
       merged.add(m.a);
       merged.add(m.b);
-
-      this.score += newF.score;
+      this.score += newS.score;
       this.updateScoreDisplay();
+      this.addScorePopup(mx, my - 30, newS.score);
+      this.addMergeFlash(mx, my);
+      this.sounds.playMerge(newType);
     }
 
-    // Clean up inactive
     this.entities = this.entities.filter(e => e.active);
 
-    // Check if dropping fruit has settled
-    const dropping = this.entities.find(e => !e.settled && e.y > 0);
-    if (!dropping && this.isDropping) {
-      this.isDropping = false;
+    // Check level completion
+    if (biggestMerged) {
+      this.checkLevelComplete();
+    }
+
+    // Check if last dropped shape has hit something
+    const lastDropped = this.entities.find(e => e.justDropped);
+    if (lastDropped) {
+      let landed = lastDropped.y + lastDropped.radius >= CANVAS_H - 4;
+      if (!landed) {
+        for (const e of this.entities) {
+          if (e === lastDropped || !e.active) continue;
+          const dx = e.x - lastDropped.x;
+          const dy = e.y - lastDropped.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < lastDropped.radius + e.radius) {
+            landed = true;
+            break;
+          }
+        }
+      }
+
+      if (landed) {
+        this.dropTimer++;
+        if (this.dropTimer > 30) {
+          lastDropped.justDropped = false;
+          this.isAiming = true;
+          this.canDrop = true;
+        }
+      }
+    } else {
       this.isAiming = true;
+      this.canDrop = true;
     }
 
     // Update particles
     for (const p of this.mergeParticles) {
-      p.x += p.vx;
-      p.y += p.vy;
+      p.x += p.vx; p.y += p.vy;
       p.vy += 0.15;
       p.life -= 0.04;
     }
     this.mergeParticles = this.mergeParticles.filter(p => p.life > 0);
+
+    // Update score popups
+    for (const p of this.scorePopups) {
+      p.y -= 1.5;
+      p.life -= 0.025;
+      p.scale = 1 + (1 - p.life) * 0.3;
+    }
+    this.scorePopups = this.scorePopups.filter(p => p.life > 0);
+
+    // Update merge flashes
+    for (const f of this.mergeFlashes) {
+      f.life -= 0.05;
+      f.radius += 2;
+    }
+    this.mergeFlashes = this.mergeFlashes.filter(f => f.life > 0);
+
+    // Update ambient particles
+    for (const p of this.ambientParticles) {
+      p.y -= p.speed;
+      p.x += Math.sin(p.time) * 0.5;
+      p.time += 0.02;
+      if (p.y < 0) {
+        p.y = CANVAS_H + 10;
+        p.x = Math.random() * CANVAS_W;
+      }
+    }
   }
 
   draw() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Background
-    ctx.fillStyle = '#fff8e7';
+    // Dark background
+    ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Bottom rounded container feel
+    // Subtle grid
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x < CANVAS_W; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, CANVAS_H);
+      ctx.stroke();
+    }
+    for (let y = 0; y < CANVAS_H; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(CANVAS_W, y);
+      ctx.stroke();
+    }
+
+    // Border glow
     ctx.beginPath();
     ctx.roundRect(4, 4, CANVAS_W - 8, CANVAS_H - 8, 8);
-    ctx.strokeStyle = '#d4a373';
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Draw entities
+    // Death line
+    const deathLine = this.getDeathLine();
+    ctx.beginPath();
+    ctx.setLineDash([6, 6]);
+    ctx.moveTo(4, deathLine);
+    ctx.lineTo(CANVAS_W - 4, deathLine);
+    ctx.strokeStyle = 'rgba(255, 0, 102, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Level indicator
+    ctx.save();
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(0, 212, 255, 0.6)';
+    ctx.fillText(`Level ${this.level}: ${this.currentTheme.name}`, 10, 20);
+    ctx.restore();
+
     for (const e of this.entities) {
       const scale = e.spawnScale || 1;
-      drawFruit(ctx, e.x, e.y, e.fruitType, scale);
+      drawShape(ctx, e.x, e.y, e.shapeType, scale);
     }
 
-    // Draw preview fruit following mouse
     if (this.isAiming && !this.gameOver && !this.paused) {
-      const f = FRUITS[this.currentFruit];
-      drawFruit(ctx, this.dropX, DROP_LINE_Y - 10, this.currentFruit);
+      const shapes = this.getShapes();
+      const s = shapes[this.currentShape];
+      drawShape(ctx, this.dropX, deathLine - 10, this.currentShape);
 
-      // Drop guide line
       ctx.beginPath();
       ctx.setLineDash([4, 4]);
-      ctx.moveTo(this.dropX, DROP_LINE_Y + f.radius + 4);
+      ctx.moveTo(this.dropX, deathLine + s.radius + 4);
       ctx.lineTo(this.dropX, CANVAS_H - 4);
-      ctx.strokeStyle = 'rgba(212, 163, 115, 0.3)';
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    // Particles
     for (const p of this.mergeParticles) {
       ctx.save();
       ctx.globalAlpha = p.life;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = p.color;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
@@ -296,9 +528,84 @@ class SuikaGame {
       ctx.restore();
     }
 
-    // Draw next fruit preview
     this.nextCtx.clearRect(0, 0, 120, 120);
-    drawFruit(this.nextCtx, 60, 60, this.nextFruit, 1.4);
+    drawShape(this.nextCtx, 60, 60, this.nextShape, 1.4);
+
+    // Draw ambient particles
+    for (const p of this.ambientParticles) {
+      ctx.save();
+      ctx.globalAlpha = p.alpha * (0.5 + 0.5 * Math.sin(p.time * 2));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Draw merge flashes
+    for (const f of this.mergeFlashes) {
+      ctx.save();
+      ctx.globalAlpha = f.life * 0.3;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+      ctx.fillStyle = f.color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Draw score popups
+    for (const p of this.scorePopups) {
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.font = `bold ${16 * p.scale}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = p.color;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = p.color;
+      ctx.fillText('+' + p.score, p.x, p.y);
+      ctx.restore();
+    }
+  }
+
+  initAmbientParticles() {
+    for (let i = 0; i < 20; i++) {
+      this.ambientParticles.push({
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * CANVAS_H,
+        size: 1 + Math.random() * 2,
+        speed: 0.2 + Math.random() * 0.5,
+        color: ['rgba(0, 212, 255, 0.3)', 'rgba(0, 240, 255, 0.2)', 'rgba(255, 0, 102, 0.15)'][Math.floor(Math.random() * 3)],
+        alpha: 0.3 + Math.random() * 0.4,
+        time: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  addScorePopup(x, y, score) {
+    const colors = ['#00f0ff', '#00d4ff', '#ffd700', '#ff0066'];
+    this.scorePopups.push({
+      x, y, score,
+      life: 1.0,
+      scale: 1,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    });
+  }
+
+  addMergeFlash(x, y) {
+    this.mergeFlashes.push({
+      x, y,
+      radius: 10,
+      life: 1.0,
+      color: '#ffffff',
+    });
+  }
+
+  triggerScreenShake() {
+    const wrapper = document.getElementById('game-wrapper');
+    wrapper.classList.remove('shake');
+    void wrapper.offsetWidth; // Force reflow
+    wrapper.classList.add('shake');
+    setTimeout(() => wrapper.classList.remove('shake'), 300);
   }
 
   loop() {
@@ -311,7 +618,6 @@ class SuikaGame {
     document.getElementById('score').textContent = this.score;
     if (this.score > this.highScore) {
       this.highScore = this.score;
-      localStorage.setItem('suika_high_score', String(this.highScore));
       this.updateHighScoreDisplay();
     }
   }
@@ -328,17 +634,26 @@ class SuikaGame {
 
   endGame() {
     this.gameOver = true;
+    this.sounds.stopAmbient();
+    this.sounds.playGameOver();
     document.getElementById('final-score').textContent = this.score;
     document.getElementById('game-over').classList.remove('hidden');
   }
 
-  saveScore() {
-    const name = document.getElementById('player-name').value.trim() || 'Anonymous';
-    this.leaderboard.push({ name, score: this.score, date: Date.now() });
-    this.leaderboard.sort((a, b) => b.score - a.score);
-    this.leaderboard = this.leaderboard.slice(0, 20);
-    localStorage.setItem('suika_leaderboard', JSON.stringify(this.leaderboard));
-    this.renderLeaderboard();
+  async saveScore() {
+    if (!this.playerName) return;
+    const entry = { name: this.playerName, score: this.score, date: Date.now() };
+    try {
+      const res = await fetch('http://localhost:8090/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      });
+      if (!res.ok) throw new Error('Failed to save score');
+      await this.fetchLeaderboard();
+    } catch (e) {
+      console.error('Score save failed:', e);
+    }
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('btn-save').disabled = true;
     document.getElementById('btn-save').textContent = 'Saved!';
@@ -357,7 +672,27 @@ class SuikaGame {
       const li = document.createElement('li');
       li.textContent = 'No scores yet';
       li.style.justifyContent = 'center';
-      li.style.color = '#c4b49a';
+      li.style.color = 'rgba(0, 212, 255, 0.4)';
+      list.appendChild(li);
+    }
+  }
+
+  renderActivePlayers(active) {
+    const list = document.getElementById('lb-active');
+    if (!list) return;
+    list.innerHTML = '';
+    active.sort((a, b) => b.score - a.score);
+    for (let i = 0; i < active.length; i++) {
+      const p = active[i];
+      const li = document.createElement('li');
+      li.innerHTML = `<span><span class="live-dot">●</span> ${escapeHtml(p.name)}</span><span>${p.score}</span>`;
+      list.appendChild(li);
+    }
+    if (active.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No active players';
+      li.style.justifyContent = 'center';
+      li.style.color = 'rgba(0, 212, 255, 0.4)';
       list.appendChild(li);
     }
   }
@@ -366,21 +701,81 @@ class SuikaGame {
     this.entities = [];
     this.score = 0;
     this.mergeParticles = [];
-    this.nextFruit = randomFruitTier(MAX_PREVIEW_TIER);
-    this.currentFruit = randomFruitTier(MAX_PREVIEW_TIER);
+    this.scorePopups = [];
+    this.mergeFlashes = [];
+    this.level = 1;
+    this.currentTheme = THEMES[0];
+    this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
+    this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.dropX = CANVAS_W / 2;
     this.isAiming = true;
-    this.isDropping = false;
+    this.canDrop = true;
+    this.dropTimer = 0;
     this.gameOver = false;
     this.paused = false;
-    this.dropCooldown = 0;
 
     document.getElementById('score').textContent = '0';
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-overlay').classList.add('hidden');
     document.getElementById('btn-save').disabled = false;
     document.getElementById('btn-save').textContent = 'Save Score';
-    document.getElementById('player-name').value = '';
+    this.updateHighScoreDisplay();
+    this.renderLeaderboard();
+    this.renderShapeChain();
+    this.sounds.startAmbient();
+  }
+
+  renderShapeChain() {
+    const container = document.getElementById('chain-list');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const shapes = this.getShapes();
+    const panelWidth = 180;
+    const gap = 4;
+    const cols = 2;
+    const mid = Math.ceil(shapes.length / 2);
+    const cellW = (panelWidth - gap * (cols - 1)) / cols;
+    const maxDiam = cellW;
+
+    // Col 1: first half
+    const leftDiv = document.createElement('div');
+    leftDiv.className = 'chain-col';
+    for (let i = 0; i < mid; i++) {
+      const s = shapes[i];
+      const item = document.createElement('div');
+      item.className = 'chain-item';
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1.0, maxDiam / (s.radius * 2));
+      const size = Math.ceil(s.radius * 2 * scale) + 4;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      drawShape(ctx, size / 2, size / 2, i, scale);
+      item.appendChild(canvas);
+      leftDiv.appendChild(item);
+    }
+
+    // Col 2: second half
+    const rightDiv = document.createElement('div');
+    rightDiv.className = 'chain-col';
+    for (let i = mid; i < shapes.length; i++) {
+      const s = shapes[i];
+      const item = document.createElement('div');
+      item.className = 'chain-item';
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1.0, maxDiam / (s.radius * 2));
+      const size = Math.ceil(s.radius * 2 * scale) + 4;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      drawShape(ctx, size / 2, size / 2, i, scale);
+      item.appendChild(canvas);
+      rightDiv.appendChild(item);
+    }
+
+    container.appendChild(leftDiv);
+    container.appendChild(rightDiv);
   }
 }
 
@@ -390,7 +785,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Start
 window.addEventListener('DOMContentLoaded', () => {
-  new SuikaGame();
+  new FusionGame();
 });

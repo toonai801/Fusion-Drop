@@ -1,5 +1,5 @@
 class Physics {
-  constructor(gravity = 0.25, friction = 0.98, bounce = 0.4) {
+  constructor(gravity = 0.3, friction = 0.985, bounce = 0.2) {
     this.gravity = gravity;
     this.friction = friction;
     this.bounce = bounce;
@@ -11,18 +11,18 @@ class Physics {
     for (const e of entities) {
       if (!e.active) continue;
 
-      // Gravity
       e.vy += this.gravity;
-
-      // Velocity
       e.x += e.vx;
       e.y += e.vy;
 
-      // Friction
       e.vx *= this.friction;
       e.vy *= this.friction;
 
-      // Wall collisions
+      // Floor friction - kill horizontal when resting
+      if (e.y + e.radius >= height - 1 && Math.abs(e.vy) < 1) {
+        e.vx *= 0.9;
+      }
+
       const r = e.radius;
       if (e.x - r < 0) {
         e.x = r;
@@ -34,12 +34,12 @@ class Physics {
       }
       if (e.y + r > height) {
         e.y = height - r;
-        e.vy = -Math.abs(e.vy) * this.bounce * 0.5;
-        if (Math.abs(e.vy) < 0.3) e.vy = 0;
+        e.vy = -Math.abs(e.vy) * this.bounce;
+        if (Math.abs(e.vy) < 0.5) e.vy = 0;
       }
     }
 
-    // Entity-entity collisions (simple circle-circle)
+    // Entity-entity collisions
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
         this.resolveCollision(entities[i], entities[j]);
@@ -56,30 +56,41 @@ class Physics {
     const minDist = a.radius + b.radius;
 
     if (dist < minDist && dist > 0.001) {
-      // Overlap
       const overlap = minDist - dist;
       const nx = dx / dist;
       const ny = dy / dist;
 
-      // Separate
       const totalMass = a.radius + b.radius;
-      const moveA = (b.radius / totalMass) * overlap * 0.5;
-      const moveB = (a.radius / totalMass) * overlap * 0.5;
+      const moveA = (b.radius / totalMass) * overlap * 0.5 + 0.02;
+      const moveB = (a.radius / totalMass) * overlap * 0.5 + 0.02;
 
       a.x -= nx * moveA;
       a.y -= ny * moveA;
       b.x += nx * moveB;
       b.y += ny * moveB;
 
-      // Bounce
       const dvx = b.vx - a.vx;
       const dvy = b.vy - a.vy;
-      const impulse = (dvx * nx + dvy * ny) * 0.3;
+      const velAlongNormal = dvx * nx + dvy * ny;
 
-      a.vx -= nx * impulse * (b.radius / totalMass);
-      a.vy -= ny * impulse * (b.radius / totalMass);
-      b.vx += nx * impulse * (a.radius / totalMass);
-      b.vy += ny * impulse * (a.radius / totalMass);
+      if (velAlongNormal > 0) return;
+
+      // Very low restitution for calm stacking
+      const restitution = 0.05;
+      const impulse = velAlongNormal * -(1 + restitution) / totalMass;
+
+      const impulseScale = 0.25;
+      a.vx -= nx * impulse * b.radius * impulseScale;
+      a.vy -= ny * impulse * b.radius * impulseScale;
+      b.vx += nx * impulse * a.radius * impulseScale;
+      b.vy += ny * impulse * a.radius * impulseScale;
+
+      // Clamp tiny velocities
+      const minVel = 0.015;
+      if (Math.abs(a.vx) < minVel) a.vx = 0;
+      if (Math.abs(a.vy) < minVel) a.vy = 0;
+      if (Math.abs(b.vx) < minVel) b.vx = 0;
+      if (Math.abs(b.vy) < minVel) b.vy = 0;
     }
   }
 }

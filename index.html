@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Suika Game Clone</title>
-<link rel="stylesheet" href="style.css">
+<title>Fusion Drop</title>
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div id="game-wrapper">
@@ -24,18 +24,43 @@
       <button id="btn-restart">↻</button>
     </div>
     <div id="leaderboard-panel">
-      <div class="lb-title">🏆 LEADERBOARD</div>
+      <div class="lb-title">🏆 ALL TIME</div>
       <ol id="lb-list"></ol>
+      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
+      <ol id="lb-active"></ol>
     </div>
   </div>
 
   <div id="game-area">
     <div id="dashed-line"></div>
     <canvas id="game-canvas" width="400" height="600"></canvas>
+    <div id="intro-screen" class="hidden">
+      <div class="intro-content">
+        <h1>FUSION DROP</h1>
+        <div class="intro-howto">
+          <h2>How to Play</h2>
+          <ol>
+            <li>Move mouse to aim, click to drop shapes</li>
+            <li>Same shapes merge into bigger shapes</li>
+            <li>Don't let shapes cross the death line</li>
+            <li>Merge two biggest shapes to unlock next level</li>
+          </ol>
+        </div>
+        <div class="intro-themes">
+          <h2>11 Themes to Unlock</h2>
+          <p>Fusion → Treasure → Slime → Potion → Planet → Food → Aquarium → Dice → Dungeon → Wizard → Cat</p>
+        </div>
+        <button id="btn-intro-start">Start Game</button>
+      </div>
+    </div>
+    <div id="start-screen" class="overlay">
+      <h1>FUSION DROP</h1>
+      <input id="start-name" type="text" placeholder="Your name" maxlength="12">
+      <button id="btn-start">Start</button>
+    </div>
     <div id="game-over" class="hidden">
       <h1>GAME OVER</h1>
       <div id="final-score">0</div>
-      <input id="player-name" type="text" placeholder="Your name" maxlength="12">
       <button id="btn-save">Save Score</button>
       <button id="btn-play-again">Play Again</button>
     </div>
@@ -44,10 +69,19 @@
       <button id="btn-resume">Resume</button>
     </div>
   </div>
+
+  <div id="right-panel">
+    <div id="shape-chain">
+      <div class="chain-label">FUSION CHAIN</div>
+      <div id="chain-list"></div>
+    </div>
+  </div>
 </div>
 
-<script src="fruits.js"></script>
-<script src="physics.js"></script>
-<script src="game.js"></script>
+<script src="themes.js?v=4"></script>
+<script src="shapes.js?v=4"></script>
+<script src="physics.js?v=4"></script>
+<script src="sounds.js?v=4"></script>
+<script src="game.js?v=4"></script>
 </body>
 </html>

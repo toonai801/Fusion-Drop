@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fusion Drop Mockup</title>
+<style>
+  body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  canvas { box-shadow: 0 0 40px rgba(0,255,255,0.2); }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="1200" height="800"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const W = canvas.width;
+const H = canvas.height;
+
+// Dark background with subtle radial glow
+const bgGrad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.8);
+bgGrad.addColorStop(0, '#1a0b2e');
+bgGrad.addColorStop(0.5, '#0d0d0d');
+bgGrad.addColorStop(1, '#050505');
+ctx.fillStyle = bgGrad;
+ctx.fillRect(0, 0, W, H);
+
+// Helper: glow text
+function drawGlowText(text, x, y, font, color, glowColor, glowSize = 20) {
+  ctx.save();
+  ctx.font = font;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = glowSize;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+// Helper: draw melting blob
+function drawBlob(cx, cy, radius, color, glowColor, melting = true) {
+  ctx.save();
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = 25;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  const pts = 24;
+  for (let i = 0; i <= pts; i++) {
+    const angle = (i / pts) * Math.PI * 2;
+    let r = radius;
+    if (melting) {
+      r += Math.sin(angle * 3 + Date.now() / 500) * 6;
+      r += Math.cos(angle * 5 + Date.now() / 700) * 4;
+    }
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// Title: FUSION DROP
+// Create a gradient for the title
+const titleGrad = ctx.createLinearGradient(W/2 - 250, 0, W/2 + 250, 0);
+titleGrad.addColorStop(0, '#00ffff');
+titleGrad.addColorStop(0.5, '#ff00ff');
+titleGrad.addColorStop(1, '#ffd700');
+
+ctx.save();
+ctx.font = 'bold 72px "Segoe UI", sans-serif';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 40;
+ctx.fillStyle = titleGrad;
+ctx.fillText('FUSION DROP', W/2, 60);
+ctx.restore();
+
+// Subtitle glow line under title
+ctx.save();
+ctx.strokeStyle = '#ff00ff';
+ctx.lineWidth = 3;
+ctx.shadowColor = '#ff00ff';
+ctx.shadowBlur = 20;
+ctx.beginPath();
+ctx.moveTo(W/2 - 200, 100);
+ctx.lineTo(W/2 + 200, 100);
+ctx.stroke();
+ctx.restore();
+
+// Left panel background
+const leftX = 20;
+const leftW = 220;
+const leftY = 130;
+const leftH = 580;
+ctx.save();
+ctx.fillStyle = 'rgba(20, 20, 30, 0.6)';
+ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+ctx.lineWidth = 2;
+ctx.shadowColor = 'rgba(0, 255, 255, 0.2)';
+ctx.shadowBlur = 15;
+ctx.beginPath();
+ctx.roundRect(leftX, leftY, leftW, leftH, 16);
+ctx.fill();
+ctx.stroke();
+ctx.restore();
+
+// Score display
+ctx.save();
+ctx.font = 'bold 28px "Segoe UI", sans-serif';
+ctx.textAlign = 'center';
+ctx.fillStyle = '#00ffff';
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 15;
+ctx.fillText('SCORE', leftX + leftW/2, leftY + 40);
+ctx.restore();
+
+ctx.save();
+ctx.font = 'bold 48px "Segoe UI", sans-serif';
+ctx.textAlign = 'center';
+ctx.fillStyle = '#ffffff';
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 20;
+ctx.fillText('14,280', leftX + leftW/2, leftY + 100);
+ctx.restore();
+
+// Particle effects around score
+function drawParticles(cx, cy, count, color) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 40;
+    const size = 2 + Math.random() * 4;
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+drawParticles(leftX + leftW/2, leftY + 90, 20, '#00ffff');
+drawParticles(leftX + leftW/2, leftY + 90, 15, '#ff00ff');
+
+// Next object preview
+ctx.save();
+ctx.font = 'bold 24px "Segoe UI", sans-serif';
+ctx.textAlign = 'center';
+ctx.fillStyle = '#ffd700';
+ctx.shadowColor = '#ffd700';
+ctx.shadowBlur = 10;
+ctx.fillText('NEXT', leftX + leftW/2, leftY + 200);
+ctx.restore();
+
+// Next object: glowing orb
+const nextX = leftX + leftW/2;
+const nextY = leftY + 300;
+ctx.save();
+ctx.shadowColor = '#ffd700';
+ctx.shadowBlur = 35;
+ctx.fillStyle = '#ffd700';
+ctx.beginPath();
+ctx.arc(nextX, nextY, 45, 0, Math.PI * 2);
+ctx.fill();
+ctx.restore();
+
+ctx.save();
+ctx.shadowColor = '#ffffff';
+ctx.shadowBlur = 20;
+ctx.fillStyle = '#ffffff';
+ctx.beginPath();
+ctx.arc(nextX, nextY, 25, 0, Math.PI * 2);
+ctx.fill();
+ctx.restore();
+
+// Center game canvas
+const centerX = 270;
+const centerW = 660;
+const centerY = 130;
+const centerH = 580;
+ctx.save();
+ctx.fillStyle = 'rgba(10, 10, 15, 0.8)';
+ctx.strokeStyle = 'rgba(255, 0, 255, 0.4)';
+ctx.lineWidth = 2;
+ctx.shadowColor = 'rgba(255, 0, 255, 0.3)';
+ctx.shadowBlur = 20;
+ctx.beginPath();
+ctx.roundRect(centerX, centerY, centerW, centerH, 16);
+ctx.fill();
+ctx.stroke();
+ctx.restore();
+
+// Draw melting blobs/shapes in center
+const blobColors = [
+  { fill: '#00ffff', glow: '#00ffff' },
+  { fill: '#ff00ff', glow: '#ff00ff' },
+  { fill: '#ffd700', glow: '#ffd700' },
+  { fill: '#ff4500', glow: '#ff4500' },
+  { fill: '#00ff7f', glow: '#00ff7f' },
+  { fill: '#1e90ff', glow: '#1e90ff' },
+];
+const blobPositions = [
+  { x: centerX + 120, y: centerY + 450, r: 55 },
+  { x: centerX + 280, y: centerY + 420, r: 45 },
+  { x: centerX + 420, y: centerY + 460, r: 50 },
+  { x: centerX + 180, y: centerY + 350, r: 35 },
+  { x: centerX + 340, y: centerY + 330, r: 38 },
+  { x: centerX + 460, y: centerY + 370, r: 32 },
+  { x: centerX + 250, y: centerY + 260, r: 28 },
+  { x: centerX + 380, y: centerY + 240, r: 30 },
+  { x: centerX + 200, y: centerY + 180, r: 22 },
+  { x: centerX + 320, y: centerY + 160, r: 24 },
+  { x: centerX + 420, y: centerY + 190, r: 20 },
+];
+
+blobPositions.forEach((pos, i) => {
+  const col = blobColors[i % blobColors.length];
+  drawBlob(pos.x, pos.y, pos.r, col.fill, col.glow, false);
+});
+
+// Fusion lines between touching blobs
+ctx.save();
+ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+ctx.lineWidth = 2;
+ctx.shadowColor = '#ffffff';
+ctx.shadowBlur = 10;
+ctx.beginPath();
+ctx.moveTo(centerX + 120, centerY + 450);
+ctx.lineTo(centerX + 280, centerY + 420);
+ctx.moveTo(centerX + 280, centerY + 420);
+ctx.lineTo(centerX + 420, centerY + 460);
+ctx.moveTo(centerX + 180, centerY + 350);
+ctx.lineTo(centerX + 340, centerY + 330);
+ctx.stroke();
+ctx.restore();
+
+// Right panel
+const rightX = 960;
+const rightW = 220;
+const rightY = 130;
+const rightH = 580;
+ctx.save();
+ctx.fillStyle = 'rgba(20, 20, 30, 0.6)';
+ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+ctx.lineWidth = 2;
+ctx.shadowColor = 'rgba(255, 215, 0, 0.2)';
+ctx.shadowBlur = 15;
+ctx.beginPath();
+ctx.roundRect(rightX, rightY, rightW, rightH, 16);
+ctx.fill();
+ctx.stroke();
+ctx.restore();
+
+// Fusion chain title
+ctx.save();
+ctx.font = 'bold 24px "Segoe UI", sans-serif';
+ctx.textAlign = 'center';
+ctx.fillStyle = '#ffd700';
+ctx.shadowColor = '#ffd700';
+ctx.shadowBlur = 10;
+ctx.fillText('FUSION CHAIN', rightX + rightW/2, rightY + 40);
+ctx.restore();
+
+// 7 abstract shapes from smallest to biggest
+const chainYStart = rightY + 90;
+const chainSpacing = 70;
+const chainLabels = [
+  'Ink Drop',
+  'Spark',
+  'Ember',
+  'Core',
+  'Nova',
+  'Void',
+  'Singularity'
+];
+const chainColors = [
+  { fill: '#1e1e2e', glow: '#555555', r: 8 },
+  { fill: '#4a00ff', glow: '#4a00ff', r: 12 },
+  { fill: '#00bfff', glow: '#00bfff', r: 16 },
+  { fill: '#00ff7f', glow: '#00ff7f', r: 22 },
+  { fill: '#ffd700', glow: '#ffd700', r: 28 },
+  { fill: '#ff4500', glow: '#ff4500', r: 34 },
+  { fill: '#ff00ff', glow: '#ff00ff', r: 42 },
+];
+
+for (let i = 0; i < 7; i++) {
+  const cy = chainYStart + i * chainSpacing;
+  const cx = rightX + rightW/2;
+  const col = chainColors[i];
+  
+  // Glow circle
+  ctx.save();
+  ctx.shadowColor = col.glow;
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = col.fill;
+  ctx.beginPath();
+  ctx.arc(cx, cy, col.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  
+  // Label
+  ctx.save();
+  ctx.font = 'bold 16px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = col.glow;
+  ctx.shadowBlur = 5;
+  ctx.fillText(chainLabels[i], cx, cy + col.r + 18);
+  ctx.restore();
+  
+  // Connector line between shapes
+  if (i < 6) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + col.r + 4);
+    ctx.lineTo(cx, cy + chainSpacing - chainColors[i+1].r - 4);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// Bottom progress bar
+const barX = 300;
+const barY = 740;
+const barW = 600;
+const barH = 28;
+ctx.save();
+ctx.fillStyle = 'rgba(20, 20, 30, 0.8)';
+ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+ctx.lineWidth = 2;
+ctx.shadowColor = 'rgba(0, 255, 255, 0.3)';
+ctx.shadowBlur = 10;
+ctx.beginPath();
+ctx.roundRect(barX, barY, barW, barH, 14);
+ctx.fill();
+ctx.stroke();
+ctx.restore();
+
+// Progress fill
+const progress = 0.35;
+ctx.save();
+const progGrad = ctx.createLinearGradient(barX, barY, barX + barW * progress, barY);
+progGrad.addColorStop(0, '#00ffff');
+progGrad.addColorStop(1, '#ff00ff');
+ctx.fillStyle = progGrad;
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 15;
+ctx.beginPath();
+ctx.roundRect(barX + 3, barY + 3, (barW - 6) * progress, barH - 6, 11);
+ctx.fill();
+ctx.restore();
+
+// Progress text
+ctx.save();
+ctx.font = 'bold 16px "Segoe UI", sans-serif';
+ctx.textAlign = 'center';
+ctx.fillStyle = '#ffffff';
+ctx.shadowColor = '#00ffff';
+ctx.shadowBlur = 8;
+ctx.fillText('Level 1 — Fusion', barX + barW/2, barY + barH/2 + 5);
+ctx.restore();
+
+// Add some ambient particles across the whole canvas
+function drawAmbientParticles() {
+  for (let i = 0; i < 50; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const size = 1 + Math.random() * 2;
+    const colors = ['#00ffff', '#ff00ff', '#ffd700', '#ffffff'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.globalAlpha = 0.3 + Math.random() * 0.4;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+drawAmbientParticles();
+
+// Decorative corner accents
+function drawCornerAccent(x, y, color, size = 30) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.moveTo(x, y + size);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + size, y);
+  ctx.stroke();
+  ctx.restore();
+}
+drawCornerAccent(10, 10, '#00ffff');
+drawCornerAccent(W - 10, 10, '#ff00ff', -30);
+drawCornerAccent(10, H - 10, '#ffd700', 30);
+drawCornerAccent(W - 10, H - 10, '#00ffff', -30);
+</script>
+</body>
+</html>

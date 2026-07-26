@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fusion Drop Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px;
+    height: 720px;
+    background: #f8f9fb;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  /* Background crystalline mesh */
+  .bg-mesh {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background:
+      radial-gradient(ellipse at 15% 25%, rgba(255,100,100,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 20%, rgba(100,200,255,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(255,220,100,0.06) 0%, transparent 50%),
+      linear-gradient(135deg, #f0f2f5 0%, #f8f9fb 50%, #eef1f5 100%);
+    z-index: 0;
+  }
+
+  /* Title */
+  .title-wrap {
+    position: relative;
+    z-index: 10;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .title {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    background: linear-gradient(
+      90deg,
+      #ff5e5e 0%, #ffb347 15%, #ffe135 30%,
+      #47e47a 45%, #4facfe 60%, #a855f7 75%, #ff5e5e 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+    position: relative;
+  }
+  .title::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 2px; top: 2px;
+    background: linear-gradient(90deg, rgba(255,0,0,0.15), rgba(0,0,255,0.15));
+    -webkit-background-clip: text;
+    background-clip: text;
+    z-index: -1;
+    filter: blur(3px);
+    opacity: 0.5;
+  }
+  .subtitle {
+    font-size: 11px;
+    color: #8898aa;
+    letter-spacing: 4px;
+    margin-top: 2px;
+  }
+
+  /* Main layout */
+  .main {
+    display: flex;
+    flex: 1;
+    width: 1220px;
+    margin-top: 10px;
+    gap: 18px;
+    z-index: 5;
+  }
+
+  /* Left Panel */
+  .panel {
+    width: 220px;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(200,210,230,0.5);
+    border-radius: 16px;
+    backdrop-filter: blur(6px);
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+  .panel h3 {
+    font-size: 13px;
+    color: #6b7c93;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .score-box {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(220,230,245,0.8);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .score-label { font-size: 11px; color: #9aaabe; letter-spacing: 1px; }
+  .score-value { font-size: 32px; font-weight: 800; color: #3a4a5e; margin-top: 4px; }
+  .score-best { font-size: 11px; color: #b0c0d0; margin-top: 4px; }
+
+  /* Next preview hex */
+  .next-box {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(220,230,245,0.8);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    position: relative;
+  }
+  .hex-preview {
+    width: 64px; height: 74px;
+    margin: 8px auto;
+    position: relative;
+  }
+  .hex-svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.1));
+  }
+
+  /* Center canvas */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(200,210,230,0.5);
+    border-radius: 16px;
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+  .canvas-inner {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+  }
+
+  /* Game shapes */
+  .shape {
+    position: absolute;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+    transition: transform 0.3s ease;
+  }
+
+  /* Right panel fusion chain */
+  .chain-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  .chain-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #5a6a7a;
+  }
+  .chain-shape {
+    width: 28px; height: 28px;
+    flex-shrink: 0;
+  }
+  .chain-arrow {
+    color: #a0b0c0;
+    font-size: 14px;
+  }
+
+  /* Bottom progress */
+  .bottom-bar {
+    width: 1220px;
+    margin: 10px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    z-index: 5;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: #7a8a9a;
+    font-weight: 700;
+    letter-spacing: 1px;
+    min-width: 90px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 18px;
+    background: rgba(220,230,245,0.6);
+    border-radius: 9px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(200,210,230,0.5);
+  }
+  .progress-fill {
+    height: 100%;
+    width: 62%;
+    background: linear-gradient(90deg, #4facfe, #a855f7, #ff5e5e);
+    border-radius: 9px;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -9px; top: -3px;
+    width: 24px; height: 24px;
+    background: #fff;
+    border: 2px solid #a855f7;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .progress-hexes {
+    display: flex;
+    gap: 6px;
+  }
+  .p-hex {
+    width: 14px; height: 16px;
+    opacity: 0.25;
+  }
+  .p-hex.filled { opacity: 1; }
+
+  /* Light burst decorations */
+  .burst {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  /* Canvas grid lines */
+  .grid-line {
+    position: absolute;
+    background: rgba(180,200,220,0.15);
+  }
+  .grid-v { width: 1px; height: 100%; }
+  .grid-h { height: 1px; width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<div class="title-wrap">
+  <div class="title" data-text="FUSION DROP">FUSION DROP</div>
+  <div class="subtitle">Abstract Fusion Game</div>
+</div>
+
+<div class="main">
+  <!-- Left Panel -->
+  <div class="panel">
+    <div>
+      <h3>Score</h3>
+      <div class="score-box">
+        <div class="score-label">CURRENT</div>
+        <div class="score-value">12,480</div>
+        <div class="score-best">Best: 34,920</div>
+      </div>
+    </div>
+
+    <div>
+      <h3>Next Drop</h3>
+      <div class="next-box">
+        <div class="hex-preview">
+          <svg class="hex-svg" viewBox="0 0 100 115">
+            <defs>
+              <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4facfe"/>
+                <stop offset="50%" stop-color="#a855f7"/>
+                <stop offset="100%" stop-color="#ff5e5e"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="url(#hexGrad)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+            <polygon points="50,20 78,36 78,68 50,85 22,68 22,36" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+          </svg>
+        </div>
+        <div style="font-size:11px;color:#8898aa;margin-top:4px;">Hex Prism</div>
+      </div>
+    </div>
+
+    <div>
+      <h3>Level</h3>
+      <div class="score-box">
+        <div class="score-label">FUSION LEVEL</div>
+        <div class="score-value" style="font-size:24px;">7</div>
+        <div class="score-best">Max chain: 4</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center Canvas -->
+  <div class="canvas-wrap">
+    <div class="canvas-inner" id="canvas">
+      <!-- Grid lines -->
+      <div class="grid-line grid-v" style="left:25%"></div>
+      <div class="grid-line grid-v" style="left:50%"></div>
+      <div class="grid-line grid-v" style="left:75%"></div>
+      <div class="grid-line grid-h" style="top:33%"></div>
+      <div class="grid-line grid-h" style="top:66%"></div>
+
+      <!-- Burst effects -->
+      <div class="burst" style="width:120px;height:120px;background:radial-gradient(circle,rgba(255,100,100,0.25),transparent 70%);top:120px;left:220px;"></div>
+      <div class="burst" style="width:80px;height:80px;background:radial-gradient(circle,rgba(100,200,255,0.3),transparent 70%);top:280px;left:380px;"></div>
+      <div class="burst" style="width:100px;height:100px;background:radial-gradient(circle,rgba(168,85,247,0.2),transparent 70%);top:180px;left:480px;"></div>
+      <div class="burst" style="width:60px;height:60px;background:radial-gradient(circle,rgba(255,200,50,0.3),transparent 70%);top:320px;left:180px;"></div>
+
+      <!-- Triangle (small) -->
+      <div class="shape" style="top:380px;left:120px;">
+        <svg width="48" height="48" viewBox="0 0 100 100">
+          <defs><linearGradient id="tri1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff5e5e"/><stop offset="100%" stop-color="#ff8f50"/></linearGradient></defs>
+          <polygon points="50,8 92,88 8,88" fill="url(#tri1)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+          <polygon points="50,25 72,65 28,65" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <!-- Triangle (small) -->
+      <div class="shape" style="top:360px;left:200px;">
+        <svg width="48" height="48" viewBox="0 0 100 100">
+          <polygon points="50,8 92,88 8,88" fill="url(#tri1)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- Hexagon (medium) -->
+      <div class="shape" style="top:300px;left:280px;">
+        <svg width="64" height="74" viewBox="0 0 100 115">
+          <defs><linearGradient id="hex1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4facfe"/><stop offset="100%" stop-color="#a855f7"/></linearGradient></defs>
+          <polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="url(#hex1)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+          <polygon points="50,22 78,38 78,70 50,88 22,70 22,38" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <!-- Dodecahedron (large, glowing) -->
+      <div class="shape" style="top:160px;left:320px;">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <defs>
+            <radialGradient id="dodeca1" cx="40%" cy="40%"><stop offset="0%" stop-color="#ffe135"/><stop offset="50%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff5e5e"/></radialGradient>
+            <filter id="glow1"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <circle cx="50" cy="50" r="46" fill="url(#dodeca1)" opacity="0.15"/>
+          <polygon points="50,6 78,18 90,42 90,68 72,88 50,94 28,88 10,68 10,42 22,18" fill="url(#dodeca1)" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" filter="url(#glow1)"/>
+          <polygon points="50,22 68,30 76,48 68,66 50,74 32,66 24,48 32,30" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+          <line x1="50" y1="22" x2="50" y2="74" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="32" y1="30" x2="68" y2="66" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="68" y1="30" x2="32" y2="66" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <!-- Complex fused shape (two hexagons merged) -->
+      <div class="shape" style="top:220px;left:440px;">
+        <svg width="90" height="90" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="fuse1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#47e47a"/><stop offset="50%" stop-color="#4facfe"/><stop offset="100%" stop-color="#a855f7"/></linearGradient>
+            <filter id="glow2"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <circle cx="50" cy="50" r="44" fill="url(#fuse1)" opacity="0.12" filter="url(#glow2)"/>
+          <path d="M30,20 L50,10 L70,20 L80,40 L80,60 L70,80 L50,90 L30,80 L20,60 L20,40 Z" fill="url(#fuse1)" stroke="rgba(255,255,255,0.8)" stroke-width="2.5"/>
+          <path d="M35,30 L50,22 L65,30 L72,45 L72,60 L65,75 L50,82 L35,75 L28,60 L28,45 Z" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+          <circle cx="50" cy="50" r="12" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- Triangle medium -->
+      <div class="shape" style="top:340px;left:420px;">
+        <svg width="58" height="58" viewBox="0 0 100 100">
+          <defs><linearGradient id="tri2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ff5e5e"/></linearGradient></defs>
+          <polygon points="50,5 92,88 8,88" fill="url(#tri2)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+          <polygon points="50,28 72,72 28,72" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <!-- Hexagon small -->
+      <div class="shape" style="top:400px;left:360px;">
+        <svg width="44" height="50" viewBox="0 0 100 115">
+          <defs><linearGradient id="hex2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4facfe"/><stop offset="100%" stop-color="#47e47a"/></linearGradient></defs>
+          <polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="url(#hex2)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- Large fused polyhedron (top right) -->
+      <div class="shape" style="top:80px;left:520px;">
+        <svg width="110" height="110" viewBox="0 0 100 100">
+          <defs>
+            <radialGradient id="mega1" cx="45%" cy="35%"><stop offset="0%" stop-color="#ffe135"/><stop offset="30%" stop-color="#ffb347"/><stop offset="60%" stop-color="#ff5e5e"/><stop offset="100%" stop-color="#a855f7"/></radialGradient>
+            <filter id="glow3"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <circle cx="50" cy="50" r="48" fill="url(#mega1)" opacity="0.1" filter="url(#glow3)"/>
+          <path d="M50,2 L75,12 L88,32 L95,52 L88,72 L75,88 L50,96 L25,88 L12,72 L5,52 L12,32 L25,12 Z" fill="url(#mega1)" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" filter="url(#glow3)"/>
+          <circle cx="50" cy="50" r="20" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+          <circle cx="50" cy="50" r="10" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.8)" stroke-width="1"/>
+          <line x1="50" y1="2" x2="50" y2="96" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="5" y1="52" x2="95" y2="52" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          <line x1="12" y1="32" x2="88" y2="72" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <line x1="12" y1="72" x2="88" y2="32" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <!-- Falling shape (animation hint) -->
+      <div class="shape" style="top:30px;left:280px;opacity:0.7;">
+        <svg width="48" height="48" viewBox="0 0 100 100">
+          <polygon points="50,8 92,88 8,88" fill="url(#tri1)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- Floating particles -->
+      <div style="position:absolute;top:100px;left:160px;width:6px;height:6px;background:#ff5e5e;border-radius:50%;opacity:0.6;filter:blur(1px);"></div>
+      <div style="position:absolute;top:250px;left:600px;width:4px;height:4px;background:#4facfe;border-radius:50%;opacity:0.7;filter:blur(1px);"></div>
+      <div style="position:absolute;top:350px;left:500px;width:5px;height:5px;background:#a855f7;border-radius:50%;opacity:0.5;filter:blur(1px);"></div>
+      <div style="position:absolute;top:150px;left:100px;width:4px;height:4px;background:#ffe135;border-radius:50%;opacity:0.6;filter:blur(1px);"></div>
+      <div style="position:absolute;top:280px;left:280px;width:6px;height:6px;background:#47e47a;border-radius:50%;opacity:0.5;filter:blur(1px);"></div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="panel">
+    <h3>Fusion Chain</h3>
+    <div class="chain-list">
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,10 90,80 10,80" fill="#ff5e5e" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#4facfe" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+      </div>
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#4facfe" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,8 80,30 92,60 80,88 50,92 20,88 8,60 20,30" fill="#47e47a" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+      </div>
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,8 80,30 92,60 80,88 50,92 20,88 8,60 20,30" fill="#47e47a" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,6 75,16 90,36 94,62 82,84 60,96 40,96 18,84 6,62 10,36 25,16" fill="#ffe135" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+      </div>
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,6 75,16 90,36 94,62 82,84 60,96 40,96 18,84 6,62 10,36 25,16" fill="#ffe135" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,2 72,10 88,28 95,52 88,74 72,90 50,96 28,90 12,74 5,52 12,28 28,10" fill="#ffb347" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+      </div>
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 100"><polygon points="50,2 72,10 88,28 95,52 88,74 72,90 50,96 28,90 12,74 5,52 12,28 28,10" fill="#ffb347" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#ff8f50" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><polygon points="50,18 74,34 82,60 66,82 40,86 18,70 14,44 30,22" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/></svg>
+      </div>
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#ff8f50" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><polygon points="50,18 74,34 82,60 66,82 40,86 18,70 14,44 30,22" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#a855f7" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><circle cx="50" cy="50" r="28" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><circle cx="50" cy="50" r="12" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/></svg>
+      </div>
+      <div class="chain-item">
+        <svg class="chain-shape" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#a855f7" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><circle cx="50" cy="50" r="28" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><circle cx="50" cy="50" r="12" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/></svg>
+        <span class="chain-arrow">→</span>
+        <svg class="chain-shape" viewBox="0 0 100 100"><defs><radialGradient id="ult" cx="40%" cy="40%"><stop offset="0%" stop-color="#fff"/><stop offset="30%" stop-color="#ffe135"/><stop offset="70%" stop-color="#ff5e5e"/><stop offset="100%" stop-color="#a855f7"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#ult)" stroke="rgba(255,255,255,0.8)" stroke-width="2.5"/><circle cx="50" cy="50" r="32" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><circle cx="50" cy="50" r="16" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><circle cx="50" cy="50" r="6" fill="#fff"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Progress -->
+<div class="bottom-bar">
+  <div class="progress-label">FUSION PROGRESS</div>
+  <div class="progress-track">
+    <div class="progress-fill"></div>
+  </div>
+  <div class="progress-hexes">
+    <svg class="p-hex filled" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#4facfe"/></svg>
+    <svg class="p-hex filled" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#47e47a"/></svg>
+    <svg class="p-hex filled" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#ffe135"/></svg>
+    <svg class="p-hex filled" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#ff8f50"/></svg>
+    <svg class="p-hex" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#a855f7"/></svg>
+    <svg class="p-hex" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#ff5e5e"/></svg>
+    <svg class="p-hex" viewBox="0 0 100 115"><polygon points="50,5 93,30 93,85 50,110 7,85 7,30" fill="#ffb347"/></svg>
+  </div>
+</div>
+
+</body>
+</html>

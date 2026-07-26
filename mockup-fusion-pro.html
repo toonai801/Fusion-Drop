@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <title>Fusion Drop - Premium UI Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1080px;
+            height: 1920px;
+            background: #0d1117;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background depth layers */
+        .bg-layer-1 {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 212, 255, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 50%, rgba(255, 45, 146, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 70% 50% at 20% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+        }
+
+        .bg-layer-2 {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 70%);
+        }
+
+        .bg-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%);
+            pointer-events: none;
+        }
+
+        /* Title */
+        .title-container {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 52px;
+            font-weight: 900;
+            letter-spacing: 12px;
+            color: #ffffff;
+            text-shadow:
+                0 0 20px rgba(0, 212, 255, 0.5),
+                0 0 40px rgba(0, 212, 255, 0.3),
+                0 0 60px rgba(0, 212, 255, 0.1);
+        }
+
+        .title-sub {
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 8px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Score Panel */
+        .score-panel {
+            position: absolute;
+            top: 150px;
+            left: 60px;
+            right: 60px;
+            height: 110px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 10;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .score-item {
+            text-align: center;
+            padding: 0 30px;
+        }
+
+        .score-item.divider {
+            width: 1px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0;
+        }
+
+        .score-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .score-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .score-value.score-main {
+            font-size: 42px;
+            background: linear-gradient(135deg, #00d4ff, #ff2d92);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Next Preview */
+        .next-panel {
+            position: absolute;
+            top: 290px;
+            right: 60px;
+            width: 140px;
+            height: 160px;
+            z-index: 10;
+        }
+
+        .next-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .next-hex {
+            width: 140px;
+            height: 140px;
+            position: relative;
+        }
+
+        .next-hex svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
+        }
+
+        .next-shape-inside {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Game Area */
+        .game-container {
+            position: absolute;
+            top: 290px;
+            left: 60px;
+            width: 680px;
+            height: 1100px;
+            z-index: 5;
+        }
+
+        .game-area {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                inset 0 0 60px rgba(0, 0, 0, 0.5),
+                0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .game-fade-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(13, 17, 23, 0.9), transparent);
+            pointer-events: none;
+        }
+
+        .game-fade-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to top, rgba(13, 17, 23, 0.8), transparent);
+            pointer-events: none;
+        }
+
+        /* Danger line */
+        .danger-line {
+            position: absolute;
+            top: 180px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 45, 146, 0.6), transparent);
+            z-index: 5;
+        }
+
+        .danger-text {
+            position: absolute;
+            top: 155px;
+            right: 30px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: rgba(255, 45, 146, 0.7);
+            text-transform: uppercase;
+        }
+
+        /* Shapes in game */
+        .shape {
+            position: absolute;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        }
+
+        .shape-triangle {
+            width: 50px; height: 50px;
+            top: 920px; left: 200px;
+        }
+
+        .shape-hex {
+            width: 80px; height: 80px;
+            top: 820px; left: 340px;
+        }
+
+        .shape-octa {
+            width: 110px; height: 110px;
+            top: 680px; left: 150px;
+        }
+
+        .shape-dodeca {
+            width: 140px; height: 140px;
+            top: 520px; left: 380px;
+        }
+
+        .shape-crystal {
+            width: 170px; height: 170px;
+            top: 340px; left: 220px;
+        }
+
+        .shape-prism {
+            width: 200px; height: 200px;
+            top: 130px; left: 120px;
+        }
+
+        /* Fusion Chain (Right side) */
+        .fusion-panel {
+            position: absolute;
+            top: 480px;
+            right: 60px;
+            width: 140px;
+            z-index: 10;
+        }
+
+        .fusion-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .fusion-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .fusion-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .fusion-line {
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(to bottom, rgba(0, 212, 255, 0.3), rgba(255, 45, 146, 0.3));
+        }
+
+        .fusion-shape-small {
+            width: 36px;
+            height: 36px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+        }
+
+        .fusion-shape-medium {
+            width: 44px;
+            height: 44px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+        }
+
+        .fusion-shape-large {
+            width: 52px;
+            height: 52px;
+            filter: drop-shadow(0 2px 10px rgba(0,0,0,0.4));
+        }
+
+        .fusion-shape-xl {
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+        }
+
+        .fusion-shape-massive {
+            width: 68px;
+            height: 68px;
+            filter: drop-shadow(0 2px 14px rgba(0,0,0,0.4));
+        }
+
+        .fusion-shape-singularity {
+            width: 76px;
+            height: 76px;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
+        }
+
+        /* Progress Bar */
+        .progress-panel {
+            position: absolute;
+            bottom: 320px;
+            left: 60px;
+            right: 60px;
+            z-index: 10;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+        }
+
+        .progress-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .progress-bar-fill {
+            width: 65%;
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #ff2d92, #ffc800);
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            position: relative;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+            border-radius: 4px;
+        }
+
+        /* Bottom Controls */
+        .controls-panel {
+            position: absolute;
+            bottom: 80px;
+            left: 60px;
+            right: 60px;
+            height: 200px;
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            flex: 1;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .control-icon {
+            width: 48px;
+            height: 48px;
+            opacity: 0.7;
+        }
+
+        .control-label {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+        }
+
+        /* Merge Effect Particles */
+        .particle-burst {
+            position: absolute;
+            top: 500px;
+            left: 450px;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        /* Glow orbs in background */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .glow-orb-1 {
+            width: 300px;
+            height: 300px;
+            top: 200px;
+            left: -50px;
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        .glow-orb-2 {
+            width: 250px;
+            height: 250px;
+            bottom: 300px;
+            right: -30px;
+            background: rgba(255, 45, 146, 0.06);
+        }
+
+        .glow-orb-3 {
+            width: 200px;
+            height: 200px;
+            top: 600px;
+            right: 200px;
+            background: rgba(139, 92, 246, 0.06);
+        }
+
+        /* Merge glow effect */
+        .merge-glow {
+            position: absolute;
+            top: 480px;
+            left: 430px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%);
+            filter: blur(20px);
+            pointer-events: none;
+            z-index: 6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Layers -->
+    <div class="bg-layer-1"></div>
+    <div class="bg-layer-2"></div>
+    <div class="bg-vignette"></div>
+
+    <!-- Glow Orbs -->
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="glow-orb glow-orb-3"></div>
+
+    <!-- Title -->
+    <div class="title-container">
+        <div class="title">FUSION DROP</div>
+        <div class="title-sub">Merge. Evolve. Ascend.</div>
+    </div>
+
+    <!-- Score Panel -->
+    <div class="score-panel">
+        <div class="score-item">
+            <div class="score-label">Score</div>
+            <div class="score-value score-main">24,850</div>
+        </div>
+        <div class="score-item divider"></div>
+        <div class="score-item">
+            <div class="score-label">Best</div>
+            <div class="score-value">56,120</div>
+        </div>
+        <div class="score-item divider"></div>
+        <div class="score-item">
+            <div class="score-label">Level</div>
+            <div class="score-value">7</div>
+        </div>
+        <div class="score-item divider"></div>
+        <div class="score-item">
+            <div class="score-label">Chain</div>
+            <div class="score-value" style="color: #00d4ff;">x4</div>
+        </div>
+    </div>
+
+    <!-- Next Preview -->
+    <div class="next-panel">
+        <div class="next-label">Next</div>
+        <div class="next-hex">
+            <svg viewBox="0 0 140 140">
+                <defs>
+                    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:rgba(0,212,255,0.2)"/>
+                        <stop offset="100%" style="stop-color:rgba(255,45,146,0.2)"/>
+                    </linearGradient>
+                    <filter id="hexGlow">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <polygon points="70,5 128,35 128,105 70,135 12,105 12,35" 
+                    fill="none" 
+                    stroke="url(#hexGrad)" 
+                    stroke-width="2"
+                    filter="url(#hexGlow)"/>
+                <polygon points="70,15 118,40 118,100 70,125 22,100 22,40" 
+                    fill="rgba(0,212,255,0.05)" 
+                    stroke="rgba(0,212,255,0.3)" 
+                    stroke-width="1"/>
+            </svg>
+            <div class="next-shape-inside">
+                <svg width="50" height="50" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="triGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d4ff"/>
+                            <stop offset="50%" style="stop-color:#00a8cc"/>
+                            <stop offset="100%" style="stop-color:#0077a3"/>
+                        </linearGradient>
+                        <filter id="triShadow">
+                            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.4)"/>
+                        </filter>
+                    </defs>
+                    <polygon points="50,10 90,80 10,80" fill="url(#triGrad)" filter="url(#triShadow)"/>
+                    <polygon points="50,18 82,78 18,78" fill="rgba(255,255,255,0.15)"/>
+                    <polygon points="50,10 65,40 50,35 35,40" fill="rgba(255,255,255,0.2)"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="game-container">
+        <div class="game-area">
+            <div class="game-grid"></div>
+            <div class="game-fade-top"></div>
+            <div class="game-fade-bottom"></div>
+            
+            <!-- Danger Line -->
+            <div class="danger-line"></div>
+            <div class="danger-text">Danger Zone</div>
+
+            <!-- Merge Glow -->
+            <div class="merge-glow"></div>
+
+            <!-- Triangle (Level 1) -->
+            <div class="shape shape-triangle">
+                <svg width="50" height="50" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="triGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d4ff"/>
+                            <stop offset="50%" style="stop-color:#00a8cc"/>
+                            <stop offset="100%" style="stop-color:#0077a3"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,8 92,82 8,82" fill="url(#triGrad1)"/>
+                    <polygon points="50,15 85,78 15,78" fill="rgba(255,255,255,0.12)"/>
+                    <polygon points="50,8 60,30 50,25 40,30" fill="rgba(255,255,255,0.2)"/>
+                </svg>
+            </div>
+
+            <!-- Hexagon (Level 2) -->
+            <div class="shape shape-hex">
+                <svg width="80" height="80" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="hexGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d4ff"/>
+                            <stop offset="100%" style="stop-color:#00a8cc"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="url(#hexGrad1)"/>
+                    <polygon points="50,12 83,30 83,70 50,88 17,70 17,30" fill="rgba(255,255,255,0.1)"/>
+                    <polygon points="50,5 70,20 50,18 30,20" fill="rgba(255,255,255,0.18)"/>
+                </svg>
+            </div>
+
+            <!-- Octahedron (Level 3) -->
+            <div class="shape shape-octa">
+                <svg width="110" height="110" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="octaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d4ff"/>
+                            <stop offset="50%" style="stop-color:#00a8cc"/>
+                            <stop offset="100%" style="stop-color:#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 85,25 85,55 50,75 15,55 15,25" fill="url(#octaGrad)"/>
+                    <polygon points="50,5 85,25 50,35 15,25" fill="rgba(255,255,255,0.15)"/>
+                    <polygon points="50,75 85,55 50,45 15,55" fill="rgba(0,0,0,0.15)"/>
+                    <polygon points="50,35 85,25 85,55 50,45" fill="rgba(255,255,255,0.08)"/>
+                    <polygon points="50,35 15,25 15,55 50,45" fill="rgba(0,0,0,0.08)"/>
+                    <polygon points="50,5 60,20 50,18 40,20" fill="rgba(255,255,255,0.25)"/>
+                </svg>
+            </div>
+
+            <!-- Dodecahedron (Level 4) -->
+            <div class="shape shape-dodeca">
+                <svg width="140" height="140" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="dodecaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#8b5cf6"/>
+                            <stop offset="50%" style="stop-color:#a78bfa"/>
+                            <stop offset="100%" style="stop-color:#ff2d92"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,8 78,20 90,45 78,70 50,82 22,70 10,45 22,20" fill="url(#dodecaGrad)"/>
+                    <polygon points="50,8 78,20 50,30 22,20" fill="rgba(255,255,255,0.15)"/>
+                    <polygon points="78,20 90,45 78,55 50,45" fill="rgba(255,255,255,0.08)"/>
+                    <polygon points="50,30 78,20 78,55 50,45" fill="rgba(255,255,255,0.06)"/>
+                    <polygon points="50,30 22,20 22,55 50,45" fill="rgba(0,0,0,0.05)"/>
+                    <polygon points="22,20 10,45 22,55 50,45" fill="rgba(0,0,0,0.08)"/>
+                    <polygon points="50,45 78,55 78,70 50,82 22,70 22,55" fill="rgba(0,0,0,0.1)"/>
+                    <polygon points="50,8 60,18 50,16 40,18" fill="rgba(255,255,255,0.3)"/>
+                </svg>
+            </div>
+
+            <!-- Crystal (Level 5) -->
+            <div class="shape shape-crystal">
+                <svg width="170" height="170" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff2d92"/>
+                            <stop offset="40%" style="stop-color:#ff6b9d"/>
+                            <stop offset="100%" style="stop-color:#ffc800"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 75,18 88,40 82,68 65,88 35,88 18,68 12,40 25,18" fill="url(#crystalGrad)"/>
+                    <!-- Top facet -->
+                    <polygon points="50,5 75,18 50,28 25,18" fill="rgba(255,255,255,0.2)"/>
+                    <!-- Upper right -->
+                    <polygon points="75,18 88,40 75,50 50,40" fill="rgba(255,255,255,0.1)"/>
+                    <!-- Upper left -->
+                    <polygon points="25,18 50,28 50,40 25,50 12,40" fill="rgba(255,255,255,0.08)"/>
+                    <!-- Center top -->
+                    <polygon points="50,28 75,18 75,50 50,40" fill="rgba(255,255,255,0.05)"/>
+                    <polygon points="50,28 25,18 25,50 50,40" fill="rgba(0,0,0,0.05)"/>
+                    <!-- Lower right -->
+                    <polygon points="88,40 82,68 65,78 75,50" fill="rgba(0,0,0,0.08)"/>
+                    <!-- Lower left -->
+                    <polygon points="12,40 25,50 35,78 18,68" fill="rgba(0,0,0,0.12)"/>
+                    <!-- Bottom -->
+                    <polygon points="50,40 75,50 65,78 35,78 25,50" fill="rgba(0,0,0,0.15)"/>
+                    <!-- Highlight -->
+                    <polygon points="50,5 58,14 50,12 42,14" fill="rgba(255,255,255,0.35)"/>
+                </svg>
+            </div>
+
+            <!-- Prism Core (Level 6) -->
+            <div class="shape shape-prism">
+                <svg width="200" height="200" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="prismGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffc800"/>
+                            <stop offset="30%" style="stop-color:#ff2d92"/>
+                            <stop offset="70%" style="stop-color:#8b5cf6"/>
+                            <stop offset="100%" style="stop-color:#00d4ff"/>
+                        </linearGradient>
+                        <radialGradient id="prismCore" cx="50%" cy="50%">
+                            <stop offset="0%" style="stop-color:rgba(255,255,255,0.4)"/>
+                            <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="50,3 72,15 88,35 92,60 82,82 60,95 40,95 18,82 8,60 12,35 28,15" fill="url(#prismGrad)"/>
+                    <!-- Complex faceting -->
+                    <polygon points="50,3 72,15 50,25 28,15" fill="rgba(255,255,255,0.25)"/>
+                    <polygon points="72,15 88,35 72,48 50,38" fill="rgba(255,255,255,0.15)"/>
+                    <polygon points="28,15 50,25 50,38 28,48 12,35" fill="rgba(255,255,255,0.1)"/>
+                    <polygon points="50,25 72,15 72,48 50,38" fill="rgba(255,255,255,0.08)"/>
+                    <polygon points="50,25 28,15 28,48 50,38" fill="rgba(0,0,0,0.05)"/>
+                    <polygon points="88,35 92,60 78,72 72,48" fill="rgba(0,0,0,0.08)"/>
+                    <polygon points="12,35 28,48 22,72 8,60" fill="rgba(0,0,0,0.12)"/>
+                    <polygon points="50,38 72,48 78,72 60,85 40,85 22,72 28,48" fill="rgba(0,0,0,0.1)"/>
+                    <polygon points="72,48 88,35 92,60 78,72" fill="rgba(255,255,255,0.05)"/>
+                    <polygon points="28,48 12,35 8,60 22,72" fill="rgba(255,255,255,0.03)"/>
+                    <!-- Core glow -->
+                    <circle cx="50" cy="55" r="18" fill="url(#prismCore)"/>
+                    <!-- Edge highlight -->
+                    <polygon points="50,3 55,10 50,8 45,10" fill="rgba(255,255,255,0.4)"/>
+                </svg>
+            </div>
+
+            <!-- Merge particles -->
+            <div class="particle-burst">
+                <div class="particle" style="width:6px;height:6px;background:#00d4ff;top:20%;left:30%;"></div>
+                <div class="particle" style="width:8px;height:8px;background:#ff2d92;top:50%;left:70%;"></div>
+                <div class="particle" style="width:5px;height:5px;background:#ffc800;top:80%;left:40%;"></div>
+                <div class="particle" style="width:7px;height:7px;background:#8b5cf6;top:30%;left:80%;"></div>
+                <div class="particle" style="width:4px;height:4px;background:#00d4ff;top:60%;left:20%;"></div>
+                <div class="particle" style="width:6px;height:6px;background:#ff2d92;top:10%;left:60%;"></div>
+                <div class="particle" style="width:5px;height:5px;background:#ffc800;top:70%;left:60%;"></div>
+                <div class="particle" style="width:4px;height:4px;background:#ffffff;top:40%;left:50%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fusion Chain -->
+    <div class="fusion-panel">
+        <div class="fusion-label">Evolution</div>
+        <div class="fusion-list">
+            <!-- Level 1: Triangle -->
+            <div class="fusion-item">
+                <div class="fusion-shape-small">
+                    <svg width="36" height="36" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="fTri" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00d4ff"/>
+                                <stop offset="100%" style="stop-color:#0077a3"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,12 85,82 15,82" fill="url(#fTri)"/>
+                        <polygon points="50,20 78,78 22,78" fill="rgba(255,255,255,0.15)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="fusion-line"></div>
+
+            <!-- Level 2: Hexagon -->
+            <div class="fusion-item">
+                <div class="fusion-shape-small">
+                    <svg width="36" height="36" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="fHex" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00d4ff"/>
+                                <stop offset="100%" style="stop-color:#00a8cc"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,8 85,28 85,72 50,92 15,72 15,28" fill="url(#fHex)"/>
+                        <polygon points="50,15 78,32 78,68 50,85 22,68 22,32" fill="rgba(255,255,255,0.1)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="fusion-line"></div>
+
+            <!-- Level 3: Octahedron -->
+            <div class="fusion-item">
+                <div class="fusion-shape-medium">
+                    <svg width="44" height="44" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="fOcta" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00d4ff"/>
+                                <stop offset="100%" style="stop-color:#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,8 82,28 82,58 50,78 18,58 18,28" fill="url(#fOcta)"/>
+                        <polygon points="50,8 82,28 50,38 18,28" fill="rgba(255,255,255,0.15)"/>
+                        <polygon points="50,78 82,58 50,48 18,58" fill="rgba(0,0,0,0.1)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="fusion-line"></div>
+
+            <!-- Level 4: Dodecahedron -->
+            <div class="fusion-item">
+                <div class="fusion-shape-medium">
+                    <svg width="44" height="44" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="fDodeca" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#8b5cf6"/>
+                                <stop offset="100%" style="stop-color:#ff2d92"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,10 76,22 88,45 76,72 50,85 24,72 12,45 24,22" fill="url(#fDodeca)"/>
+                        <polygon points="50,10 76,22 50,32 24,22" fill="rgba(255,255,255,0.15)"/>
+                        <polygon points="50,85 76,72 76,50 50,60 24,50 24,72" fill="rgba(0,0,0,0.1)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="fusion-line"></div>
+
+            <!-- Level 5: Crystal -->
+            <div class="fusion-item">
+                <div class="fusion-shape-large">
+                    <svg width="52" height="52" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="fCrystal" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#ff2d92"/>
+                                <stop offset="100%" style="stop-color:#ffc800"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,10 72,22 85,42 80,65 65,82 35,82 20,65 15,42 28,22" fill="url(#fCrystal)"/>
+                        <polygon points="50,10 72,22 50,32 28,22" fill="rgba(255,255,255,0.2)"/>
+                        <polygon points="50,55 72,45 80,65 65,82 35,82 20,65 28,45" fill="rgba(0,0,0,0.1)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="fusion-line"></div>
+
+            <!-- Level 6: Prism Core -->
+            <div class="fusion-item">
+                <div class="fusion-shape-xl">
+                    <svg width="60" height="60" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="fPrism" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#ffc800"/>
+                                <stop offset="50%" style="stop-color:#ff2d92"/>
+                                <stop offset="100%" style="stop-color:#00d4ff"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,8 70,18 85,35 88,55 80,75 62,88 38,88 20,75 12,55 15,35 30,18" fill="url(#fPrism)"/>
+                        <polygon points="50,8 70,18 50,28 30,18" fill="rgba(255,255,255,0.2)"/>
+                        <polygon points="50,45 70,38 80,75 62,88 38,88 20,75 30,38" fill="rgba(0,0,0,0.08)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="fusion-line" style="background: linear-gradient(to bottom, rgba(255,200,0,0.4), rgba(255,255,255,0.4));"></div>
+
+            <!-- Level 7: Singularity -->
+            <div class="fusion-item">
+                <div class="fusion-shape-singularity">
+                    <svg width="76" height="76" viewBox="0 0 100 100">
+                        <defs>
+                            <radialGradient id="fSing" cx="50%" cy="50%">
+                                <stop offset="0%" style="stop-color:#ffffff"/>
+                                <stop offset="20%" style="stop-color:#00d4ff"/>
+                                <stop offset="40%" style="stop-color:#8b5cf6"/>
+                                <stop offset="60%" style="stop-color:#ff2d92"/>
+                                <stop offset="80%" style="stop-color:#ffc800"/>
+                                <stop offset="100%" style="stop-color:#0d1117"/>
+                            </radialGradient>
+                            <filter id="singGlow">
+                                <feGaussianBlur stdDeviation="2" result="blur"/>
+                                <feMerge>
+                                    <feMergeNode in="blur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        <circle cx="50" cy="50" r="42" fill="url(#fSing)" filter="url(#singGlow)"/>
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                        <circle cx="50" cy="50" r="20" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                        <circle cx="50" cy="50" r="10" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+                        <!-- Light rays -->
+                        <line x1="50" y1="8" x2="50" y2="20" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                        <line x1="50" y1="80" x2="50" y2="92" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                        <line x1="8" y1="50" x2="20" y2="50" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                        <line x1="80" y1="50" x2="92" y2="50" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+                        <line x1="20" y1="20" x2="28" y2="28" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                        <line x1="80" y1="80" x2="72" y2="72" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                        <line x1="80" y1="20" x2="72" y2="28" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                        <line x1="20" y1="80" x2="28" y2="72" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-panel">
+        <div class="progress-header">
+            <div class="progress-label">Fusion Progress</div>
+            <div class="progress-value">65% → Prism Core</div>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-panel">
+        <div class="control-btn">
+            <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16" rx="1" fill="rgba(255,255,255,0.7)"/>
+                <rect x="14" y="4" width="4" height="16" rx="1" fill="rgba(255,255,255,0.7)"/>
+            </svg>
+            <div class="control-label">Pause</div>
+        </div>
+        <div class="control-btn">
+            <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" fill="none"/>
+                <path d="M3 3v5h5" fill="none"/>
+            </svg>
+            <div class="control-label">Restart</div>
+        </div>
+        <div class="control-btn">
+            <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" fill="rgba(255,255,255,0.7)"/>
+                <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.9 10h-6m-6 0H1.9" fill="none"/>
+            </svg>
+            <div class="control-label">Settings</div>
+        </div>
+    </div>
+</body>
+</html>
