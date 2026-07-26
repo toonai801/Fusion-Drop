@@ -361,6 +361,7 @@ class FusionGame {
         active: true,
         settleTimer: 0,
         spawnScale: 0.1, targetScale: 1,
+        justDropped: false,
       });
 
       a.active = false;
@@ -406,7 +407,8 @@ class FusionGame {
           this.canDrop = true;
         }
       }
-    } else {
+    } else if (!this.isAiming && this.canDrop) {
+      // No lastDropped but we should be aiming - reset
       this.isAiming = true;
       this.canDrop = true;
     }
