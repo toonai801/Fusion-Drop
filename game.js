@@ -2,6 +2,8 @@ const CANVAS_W = 400;
 const CANVAS_H = 600;
 const DROP_LINE_Y = 90;
 const MAX_PREVIEW_TIER = 2;
+const GRACE_FRAMES = 180;
+const DROP_DELAY = 30;
 
 class FusionGame {
   constructor() {
@@ -19,7 +21,6 @@ class FusionGame {
     this.highScore = 0;
     this.level = 1;
     this.currentTheme = THEMES[0];
-    this.shapes = this.currentTheme.shapes;
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.dropX = CANVAS_W / 2;
@@ -28,12 +29,13 @@ class FusionGame {
     this.dropTimer = 0;
     this.gameOver = false;
     this.paused = false;
+    this.playerName = '';
+
     this.mergeParticles = [];
     this.scorePopups = [];
     this.ambientParticles = [];
     this.mergeFlashes = [];
     this.leaderboard = [];
-    this.playerName = '';
     this.sounds = new SoundManager();
 
     this.renderShapeChain();
@@ -45,33 +47,16 @@ class FusionGame {
     this.loop();
   }
 
-  getShapes() {
-    return getCurrentShapes(this.level);
-  }
-
-  getShapeCount() {
-    return this.getShapes().length;
-  }
-
-  getPhysicsSpeed() {
-    return getPhysicsSpeed(this.level);
-  }
-
-  getDeathLine() {
-    return DROP_LINE_Y + getDeathLineOffset(this.level);
-  }
+  getShapes() { return getCurrentShapes(this.level); }
+  getPhysicsSpeed() { return getPhysicsSpeed(this.level); }
+  getDeathLine() { return DROP_LINE_Y + getDeathLineOffset(this.level); }
 
   randomShapeTier(maxTier) {
     const weights = [];
-    for (let i = 0; i <= maxTier; i++) {
-      weights.push(Math.pow(0.55, i));
-    }
+    for (let i = 0; i <= maxTier; i++) weights.push(Math.pow(0.55, i));
     const total = weights.reduce((a, b) => a + b, 0);
     let r = Math.random() * total;
-    for (let i = 0; i < weights.length; i++) {
-      r -= weights[i];
-      if (r <= 0) return i;
-    }
+    for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r <= 0) return i; }
     return 0;
   }
 
@@ -79,7 +64,6 @@ class FusionGame {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
-    // Scale canvas to fit parent while maintaining aspect ratio
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
     this.scale = window.devicePixelRatio || 1;
@@ -92,11 +76,10 @@ class FusionGame {
     const intro = document.getElementById('intro-screen');
     const btnStart = document.getElementById('btn-intro-start');
     intro.classList.remove('hidden');
-    this.canvas.style.pointerEvents = 'none';
-    
+    this.disableCanvas();
     btnStart.addEventListener('click', () => {
       intro.classList.add('hidden');
-      this.canvas.style.pointerEvents = 'auto';
+      this.enableCanvas();
       this.showStartScreen();
     }, { once: true });
   }
@@ -104,7 +87,7 @@ class FusionGame {
   showStartScreen() {
     this.paused = true;
     document.getElementById('start-screen').classList.remove('hidden');
-    this.canvas.style.pointerEvents = 'none';
+    this.disableCanvas();
     const startName = document.getElementById('start-name');
     const btnStart = document.getElementById('btn-start');
     startName.value = '';
@@ -112,26 +95,24 @@ class FusionGame {
 
     const onStart = () => {
       const name = startName.value.trim();
-      if (!name) {
-        startName.style.borderColor = 'rgba(255, 0, 102, 0.6)';
-        return;
-      }
+      if (!name) { startName.style.borderColor = 'rgba(255, 0, 102, 0.6)'; return; }
       this.playerName = name;
       this.paused = false;
       this.sounds.init();
       this.sounds.startAmbient();
       document.getElementById('start-screen').classList.add('hidden');
-      this.canvas.style.pointerEvents = 'auto';
+      this.enableCanvas();
       startName.style.borderColor = 'rgba(0, 212, 255, 0.4)';
       this.updateHighScoreDisplay();
       this.renderLeaderboard();
     };
 
     btnStart.addEventListener('click', onStart, { once: true });
-    startName.addEventListener('keydown', (e) => {
-      if (e.code === 'Enter') onStart();
-    }, { once: true });
+    startName.addEventListener('keydown', (e) => { if (e.code === 'Enter') onStart(); }, { once: true });
   }
+
+  enableCanvas() { this.canvas.style.pointerEvents = 'auto'; }
+  disableCanvas() { this.canvas.style.pointerEvents = 'none'; }
 
   bindEvents() {
     this.canvas.addEventListener('mousemove', (e) => this.handleMove(e));
@@ -147,9 +128,7 @@ class FusionGame {
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
 
     document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'Enter') {
-        if (!this.gameOver && !this.paused) this.drop();
-      }
+      if (e.code === 'Space' || e.code === 'Enter') { if (!this.gameOver && !this.paused) this.drop(); }
       if (e.code === 'Escape') this.togglePause();
     });
   }
@@ -160,20 +139,15 @@ class FusionGame {
       if (!res.ok) throw new Error('Failed to fetch scores');
       this.leaderboard = await res.json();
       this.renderLeaderboard();
-    } catch (e) {
-      console.error('Leaderboard fetch failed:', e);
-    }
+    } catch (e) { console.error('Leaderboard fetch failed:', e); }
   }
 
   async fetchActivePlayers() {
     try {
       const res = await fetch('/api/active');
       if (!res.ok) throw new Error('Failed to fetch active players');
-      const active = await res.json();
-      this.renderActivePlayers(active);
-    } catch (e) {
-      console.error('Active players fetch failed:', e);
-    }
+      this.renderActivePlayers(await res.json());
+    } catch (e) { console.error('Active players fetch failed:', e); }
   }
 
   async reportActive() {
@@ -184,9 +158,7 @@ class FusionGame {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: this.playerName, score: this.score }),
       });
-    } catch (e) {
-      // Silent fail for heartbeats
-    }
+    } catch (e) { /* Silent fail for heartbeats */ }
   }
 
   startActivePolling() {
@@ -230,17 +202,11 @@ class FusionGame {
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
     this.entities.push({
-      x: this.dropX,
-      y: -s.radius * 2,
-      vx: 0,
-      vy: 2 * this.getPhysicsSpeed(),
-      radius: s.radius,
-      shapeType: this.currentShape,
-      active: true,
-      settleTimer: 0,
-      spawnScale: 0,
-      targetScale: 1,
-      justDropped: true,
+      x: this.dropX, y: -s.radius * 2,
+      vx: 0, vy: 2 * this.getPhysicsSpeed(),
+      radius: s.radius, shapeType: this.currentShape,
+      active: true, settleTimer: 0,
+      spawnScale: 0, targetScale: 1, justDropped: true,
     });
 
     this.currentShape = this.nextShape;
@@ -249,42 +215,25 @@ class FusionGame {
   }
 
   checkLevelComplete() {
-    // Check if player has two of the biggest shape
     const shapes = this.getShapes();
     const biggestType = shapes.length - 1;
     const biggestCount = this.entities.filter(e => e.active && e.shapeType === biggestType).length;
-    
-    if (biggestCount >= 2) {
-      // Level complete!
-      if (this.level < THEMES.length) {
-        this.advanceLevel();
-      }
-    }
+    if (biggestCount >= 2 && this.level < THEMES.length) this.advanceLevel();
   }
 
   advanceLevel() {
     const oldLevel = this.level;
     this.level++;
     this.currentTheme = THEMES[Math.min(this.level - 1, THEMES.length - 1)];
-    
-    // Transform existing entities to new theme
     for (const e of this.entities) {
       if (!e.active) continue;
       const transformed = transformEntityToTheme(e, oldLevel, this.level);
       e.shapeType = transformed.shapeType;
       e.radius = transformed.radius;
     }
-    
-    // Update physics
     this.physics = new Physics(0.3 * this.getPhysicsSpeed(), 0.98, 0.2);
-    
-    // Play level complete sound
     this.sounds.playLevelComplete();
-    
-    // Update UI
     this.renderShapeChain();
-    
-    // Add level up notification
     this.addScorePopup(CANVAS_W / 2, CANVAS_H / 2, 'LEVEL ' + this.level + '!');
   }
 
@@ -295,78 +244,57 @@ class FusionGame {
     const deathLine = this.getDeathLine();
     this.physics.update(this.entities, CANVAS_W - 4, CANVAS_H - 4);
 
+    // Process merges
     const toMerge = [];
     const n = this.entities.length;
-
     for (let i = 0; i < n; i++) {
       const a = this.entities[i];
       if (!a.active) continue;
 
       // Spawn animation
       if (a.spawnScale < a.targetScale) {
-        a.spawnScale += 0.08;
-        if (a.spawnScale > a.targetScale) a.spawnScale = a.targetScale;
+        a.spawnScale = Math.min(a.spawnScale + 0.08, a.targetScale);
       }
 
-      // Count frames above death line for game over
+      // Death line check
       if (a.y - a.radius < deathLine && a.y > 0) {
         a.settleTimer++;
-        if (a.settleTimer > 180) {
-          this.endGame();
-          return;
-        }
-      } else if (a.y - a.radius >= deathLine) {
-        a.settleTimer = 0;
-      }
+        if (a.settleTimer > GRACE_FRAMES) { this.endGame(); return; }
+      } else { a.settleTimer = 0; }
 
-      // Merge check
+      // Merge detection
       for (let j = i + 1; j < n; j++) {
         const b = this.entities[j];
-        if (!b.active) continue;
-        if (a.shapeType !== b.shapeType) continue;
-        if (a.shapeType >= shapes.length - 1) continue;
-
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
+        if (!b.active || a.shapeType !== b.shapeType || a.shapeType >= shapes.length - 1) continue;
+        const dist = Math.hypot(b.x - a.x, b.y - a.y);
         if (dist < a.radius + b.radius) {
           let already = false;
           for (const m of toMerge) {
-            if ((m.a === i && m.b === j) || (m.a === j && m.b === i) || m.a === i || m.b === i || m.a === j || m.b === j) {
-              already = true;
-              break;
-            }
+            if (m.a === i || m.b === i || m.a === j || m.b === j) { already = true; break; }
           }
           if (!already) toMerge.push({ a: i, b: j });
         }
       }
     }
 
-    // Process merges
+    // Execute merges
     const merged = new Set();
     let biggestMerged = false;
     for (const m of toMerge) {
       if (merged.has(m.a) || merged.has(m.b)) continue;
-      const a = this.entities[m.a];
-      const b = this.entities[m.b];
-      if (!a.active || !b.active) continue;
+      const a = this.entities[m.a], b = this.entities[m.b];
+      if (!a || !b || !a.active || !b.active) continue;
 
       const newType = a.shapeType + 1;
       const newS = shapes[newType];
-      const mx = (a.x + b.x) / 2;
-      const my = (a.y + b.y) / 2;
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
 
-      // Check if this is merging two biggest shapes
-      if (a.shapeType === shapes.length - 1) {
-        biggestMerged = true;
-        this.triggerScreenShake();
-      }
+      if (a.shapeType === shapes.length - 1) { biggestMerged = true; this.triggerScreenShake(); }
 
+      // Merge particles
       for (let p = 0; p < 12; p++) {
         const angle = (p / 12) * Math.PI * 2;
-        this.mergeParticles.push({
-          x: mx, y: my,
+        this.mergeParticles.push({ x: mx, y: my,
           vx: Math.cos(angle) * (2 + Math.random() * 3),
           vy: Math.sin(angle) * (2 + Math.random() * 3),
           life: 1.0, color: newS.glow, size: 3 + Math.random() * 4,
@@ -376,18 +304,13 @@ class FusionGame {
       this.entities.push({
         x: mx, y: my - 2,
         vx: (a.vx + b.vx) * 0.3, vy: -1.5,
-        radius: newS.radius,
-        shapeType: newType,
-        active: true,
-        settleTimer: 0,
-        spawnScale: 0.1, targetScale: 1,
-        justDropped: false,
+        radius: newS.radius, shapeType: newType,
+        active: true, settleTimer: 0,
+        spawnScale: 0.1, targetScale: 1, justDropped: false,
       });
 
-      a.active = false;
-      b.active = false;
-      merged.add(m.a);
-      merged.add(m.b);
+      a.active = false; b.active = false;
+      merged.add(m.a); merged.add(m.b);
       this.score += newS.score;
       this.updateScoreDisplay();
       this.addScorePopup(mx, my - 30, newS.score);
@@ -396,75 +319,46 @@ class FusionGame {
     }
 
     this.entities = this.entities.filter(e => e.active);
+    if (biggestMerged) this.checkLevelComplete();
 
-    // Check level completion
-    if (biggestMerged) {
-      this.checkLevelComplete();
-    }
-
-    // Check if last dropped shape has hit something
+    // Wait for last dropped to land before next drop
     const lastDropped = this.entities.find(e => e.justDropped);
     if (lastDropped) {
       let landed = lastDropped.y + lastDropped.radius >= CANVAS_H - 4;
       if (!landed) {
         for (const e of this.entities) {
-          if (e === lastDropped || !e.active) continue;
-          const dx = e.x - lastDropped.x;
-          const dy = e.y - lastDropped.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < lastDropped.radius + e.radius) {
-            landed = true;
-            break;
+          if (e === lastDropped) continue;
+          if (Math.hypot(e.x - lastDropped.x, e.y - lastDropped.y) < lastDropped.radius + e.radius) {
+            landed = true; break;
           }
         }
       }
-
       if (landed) {
         this.dropTimer++;
-        if (this.dropTimer > 30) {
+        if (this.dropTimer > DROP_DELAY) {
           lastDropped.justDropped = false;
           this.isAiming = true;
           this.canDrop = true;
         }
       }
-    } else if (!this.isAiming && this.canDrop) {
-      // No lastDropped but we should be aiming - reset
-      this.isAiming = true;
-      this.canDrop = true;
+    } else {
+      // If no lastDropped but we're not aiming, reset
+      if (!this.isAiming) { this.isAiming = true; this.canDrop = true; }
     }
 
     // Update particles
-    for (const p of this.mergeParticles) {
-      p.x += p.vx; p.y += p.vy;
-      p.vy += 0.15;
-      p.life -= 0.04;
-    }
+    for (const p of this.mergeParticles) { p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= 0.04; }
     this.mergeParticles = this.mergeParticles.filter(p => p.life > 0);
 
-    // Update score popups
-    for (const p of this.scorePopups) {
-      p.y -= 1.5;
-      p.life -= 0.025;
-      p.scale = 1 + (1 - p.life) * 0.3;
-    }
+    for (const p of this.scorePopups) { p.y -= 1.5; p.life -= 0.025; p.scale = 1 + (1 - p.life) * 0.3; }
     this.scorePopups = this.scorePopups.filter(p => p.life > 0);
 
-    // Update merge flashes
-    for (const f of this.mergeFlashes) {
-      f.life -= 0.05;
-      f.radius += 2;
-    }
+    for (const f of this.mergeFlashes) { f.life -= 0.05; f.radius += 2; }
     this.mergeFlashes = this.mergeFlashes.filter(f => f.life > 0);
 
-    // Update ambient particles
     for (const p of this.ambientParticles) {
-      p.y -= p.speed;
-      p.x += Math.sin(p.time) * 0.5;
-      p.time += 0.02;
-      if (p.y < 0) {
-        p.y = CANVAS_H + 10;
-        p.x = Math.random() * CANVAS_W;
-      }
+      p.y -= p.speed; p.x += Math.sin(p.time) * 0.5; p.time += 0.02;
+      if (p.y < 0) { p.y = CANVAS_H + 10; p.x = Math.random() * CANVAS_W; }
     }
   }
 
@@ -472,42 +366,25 @@ class FusionGame {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Dark background
+    // Background
     ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    // Subtle grid
+    // Grid
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
     ctx.lineWidth = 0.5;
-    for (let x = 0; x < CANVAS_W; x += 40) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, CANVAS_H);
-      ctx.stroke();
-    }
-    for (let y = 0; y < CANVAS_H; y += 40) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_W, y);
-      ctx.stroke();
-    }
+    for (let x = 0; x < CANVAS_W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_H); ctx.stroke(); }
+    for (let y = 0; y < CANVAS_H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_W, y); ctx.stroke(); }
 
     // Border glow
-    ctx.beginPath();
-    ctx.roundRect(4, 4, CANVAS_W - 8, CANVAS_H - 8, 8);
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(4, 4, CANVAS_W - 8, CANVAS_H - 8, 8);
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
 
     // Death line
     const deathLine = this.getDeathLine();
-    ctx.beginPath();
-    ctx.setLineDash([6, 6]);
-    ctx.moveTo(4, deathLine);
-    ctx.lineTo(CANVAS_W - 4, deathLine);
-    ctx.strokeStyle = 'rgba(255, 0, 102, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.beginPath(); ctx.setLineDash([6, 6]);
+    ctx.moveTo(4, deathLine); ctx.lineTo(CANVAS_W - 4, deathLine);
+    ctx.strokeStyle = 'rgba(255, 0, 102, 0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.setLineDash([]);
 
     // Level indicator
@@ -518,114 +395,80 @@ class FusionGame {
     ctx.fillText(`Level ${this.level}: ${this.currentTheme.name}`, 10, 20);
     ctx.restore();
 
+    // Entities
     for (const e of this.entities) {
       const scale = e.spawnScale || 1;
       drawShape(ctx, e.x, e.y, e.shapeType, scale);
     }
 
+    // Aiming indicator
     if (this.isAiming && !this.gameOver && !this.paused) {
       const shapes = this.getShapes();
       const s = shapes[this.currentShape];
       drawShape(ctx, this.dropX, deathLine - 10, this.currentShape);
-
-      ctx.beginPath();
-      ctx.setLineDash([4, 4]);
-      ctx.moveTo(this.dropX, deathLine + s.radius + 4);
-      ctx.lineTo(this.dropX, CANVAS_H - 4);
-      ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.setLineDash([4, 4]);
+      ctx.moveTo(this.dropX, deathLine + s.radius + 4); ctx.lineTo(this.dropX, CANVAS_H - 4);
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
     }
 
+    // Particles
     for (const p of this.mergeParticles) {
-      ctx.save();
-      ctx.globalAlpha = p.life;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.fill();
-      ctx.restore();
+      ctx.save(); ctx.globalAlpha = p.life; ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fillStyle = p.color; ctx.fill(); ctx.restore();
     }
 
+    // Ambient
+    for (const p of this.ambientParticles) {
+      ctx.save(); ctx.globalAlpha = p.alpha * (0.5 + 0.5 * Math.sin(p.time * 2));
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color; ctx.fill(); ctx.restore();
+    }
+
+    // Flashes
+    for (const f of this.mergeFlashes) {
+      ctx.save(); ctx.globalAlpha = f.life * 0.3;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+      ctx.fillStyle = f.color; ctx.fill(); ctx.restore();
+    }
+
+    // Score popups
+    for (const p of this.scorePopups) {
+      ctx.save(); ctx.globalAlpha = p.life;
+      ctx.font = `bold ${16 * p.scale}px Inter, sans-serif`;
+      ctx.textAlign = 'center'; ctx.fillStyle = p.color; ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+      ctx.fillText('+' + p.score, p.x, p.y); ctx.restore();
+    }
+
+    // Next preview
     this.nextCtx.clearRect(0, 0, 120, 120);
     drawShape(this.nextCtx, 60, 60, this.nextShape, 1.4);
-
-    // Draw ambient particles
-    for (const p of this.ambientParticles) {
-      ctx.save();
-      ctx.globalAlpha = p.alpha * (0.5 + 0.5 * Math.sin(p.time * 2));
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Draw merge flashes
-    for (const f of this.mergeFlashes) {
-      ctx.save();
-      ctx.globalAlpha = f.life * 0.3;
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-      ctx.fillStyle = f.color;
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Draw score popups
-    for (const p of this.scorePopups) {
-      ctx.save();
-      ctx.globalAlpha = p.life;
-      ctx.font = `bold ${16 * p.scale}px Inter, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillStyle = p.color;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = p.color;
-      ctx.fillText('+' + p.score, p.x, p.y);
-      ctx.restore();
-    }
   }
 
   initAmbientParticles() {
     for (let i = 0; i < 20; i++) {
       this.ambientParticles.push({
-        x: Math.random() * CANVAS_W,
-        y: Math.random() * CANVAS_H,
-        size: 1 + Math.random() * 2,
-        speed: 0.2 + Math.random() * 0.5,
+        x: Math.random() * CANVAS_W, y: Math.random() * CANVAS_H,
+        size: 1 + Math.random() * 2, speed: 0.2 + Math.random() * 0.5,
         color: ['rgba(0, 212, 255, 0.3)', 'rgba(0, 240, 255, 0.2)', 'rgba(255, 0, 102, 0.15)'][Math.floor(Math.random() * 3)],
-        alpha: 0.3 + Math.random() * 0.4,
-        time: Math.random() * Math.PI * 2,
+        alpha: 0.3 + Math.random() * 0.4, time: Math.random() * Math.PI * 2,
       });
     }
   }
 
   addScorePopup(x, y, score) {
     const colors = ['#00f0ff', '#00d4ff', '#ffd700', '#ff0066'];
-    this.scorePopups.push({
-      x, y, score,
-      life: 1.0,
-      scale: 1,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    });
+    this.scorePopups.push({ x, y, score, life: 1.0, scale: 1, color: colors[Math.floor(Math.random() * colors.length)] });
   }
 
   addMergeFlash(x, y) {
-    this.mergeFlashes.push({
-      x, y,
-      radius: 10,
-      life: 1.0,
-      color: '#ffffff',
-    });
+    this.mergeFlashes.push({ x, y, radius: 10, life: 1.0, color: '#ffffff' });
   }
 
   triggerScreenShake() {
     const wrapper = document.getElementById('game-wrapper');
     wrapper.classList.remove('shake');
-    void wrapper.offsetWidth; // Force reflow
+    void wrapper.offsetWidth;
     wrapper.classList.add('shake');
     setTimeout(() => wrapper.classList.remove('shake'), 300);
   }
@@ -638,10 +481,7 @@ class FusionGame {
 
   updateScoreDisplay() {
     document.getElementById('score').textContent = this.score;
-    if (this.score > this.highScore) {
-      this.highScore = this.score;
-      this.updateHighScoreDisplay();
-    }
+    if (this.score > this.highScore) { this.highScore = this.score; this.updateHighScoreDisplay(); }
   }
 
   updateHighScoreDisplay() {
@@ -661,7 +501,7 @@ class FusionGame {
     this.sounds.playGameOver();
     document.getElementById('final-score').textContent = this.score;
     document.getElementById('game-over').classList.remove('hidden');
-    this.canvas.style.pointerEvents = 'none';
+    this.disableCanvas();
   }
 
   async saveScore() {
@@ -669,15 +509,12 @@ class FusionGame {
     const entry = { name: this.playerName, score: this.score, date: Date.now() };
     try {
       const res = await fetch('/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
       });
       if (!res.ok) throw new Error('Failed to save score');
       await this.fetchLeaderboard();
-    } catch (e) {
-      console.error('Score save failed:', e);
-    }
+    } catch (e) { console.error('Score save failed:', e); }
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('btn-save').disabled = true;
     document.getElementById('btn-save').textContent = 'Saved!';
@@ -694,10 +531,8 @@ class FusionGame {
     }
     if (this.leaderboard.length === 0) {
       const li = document.createElement('li');
-      li.textContent = 'No scores yet';
-      li.style.justifyContent = 'center';
-      li.style.color = 'rgba(0, 212, 255, 0.4)';
-      list.appendChild(li);
+      li.textContent = 'No scores yet'; li.style.justifyContent = 'center';
+      li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
     }
   }
 
@@ -714,36 +549,25 @@ class FusionGame {
     }
     if (active.length === 0) {
       const li = document.createElement('li');
-      li.textContent = 'No active players';
-      li.style.justifyContent = 'center';
-      li.style.color = 'rgba(0, 212, 255, 0.4)';
-      list.appendChild(li);
+      li.textContent = 'No active players'; li.style.justifyContent = 'center';
+      li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
     }
   }
 
   restart() {
-    this.entities = [];
-    this.score = 0;
-    this.mergeParticles = [];
-    this.scorePopups = [];
-    this.mergeFlashes = [];
-    this.level = 1;
-    this.currentTheme = THEMES[0];
+    this.entities = []; this.score = 0;
+    this.mergeParticles = []; this.scorePopups = []; this.mergeFlashes = [];
+    this.level = 1; this.currentTheme = THEMES[0];
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
-    this.dropX = CANVAS_W / 2;
-    this.isAiming = true;
-    this.canDrop = true;
-    this.dropTimer = 0;
-    this.gameOver = false;
-    this.paused = false;
-
+    this.dropX = CANVAS_W / 2; this.isAiming = true; this.canDrop = true;
+    this.dropTimer = 0; this.gameOver = false; this.paused = false;
     document.getElementById('score').textContent = '0';
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-overlay').classList.add('hidden');
     document.getElementById('btn-save').disabled = false;
     document.getElementById('btn-save').textContent = 'Save Score';
-    this.canvas.style.pointerEvents = 'auto';
+    this.enableCanvas();
     this.updateHighScoreDisplay();
     this.renderLeaderboard();
     this.renderShapeChain();
@@ -754,62 +578,41 @@ class FusionGame {
     const container = document.getElementById('chain-list');
     if (!container) return;
     container.innerHTML = '';
-    
     const shapes = this.getShapes();
-    const panelWidth = 180;
-    const gap = 4;
-    const cols = 2;
+    const panelWidth = 180, gap = 4, cols = 2;
     const mid = Math.ceil(shapes.length / 2);
     const cellW = (panelWidth - gap * (cols - 1)) / cols;
     const maxDiam = cellW;
 
-    // Col 1: first half
-    const leftDiv = document.createElement('div');
-    leftDiv.className = 'chain-col';
+    const leftDiv = document.createElement('div'); leftDiv.className = 'chain-col';
     for (let i = 0; i < mid; i++) {
-      const s = shapes[i];
-      const item = document.createElement('div');
-      item.className = 'chain-item';
+      const s = shapes[i]; const item = document.createElement('div'); item.className = 'chain-item';
       const canvas = document.createElement('canvas');
       const scale = Math.min(1.0, maxDiam / (s.radius * 2));
       const size = Math.ceil(s.radius * 2 * scale) + 4;
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
       drawShape(ctx, size / 2, size / 2, i, scale);
-      item.appendChild(canvas);
-      leftDiv.appendChild(item);
+      item.appendChild(canvas); leftDiv.appendChild(item);
     }
 
-    // Col 2: second half
-    const rightDiv = document.createElement('div');
-    rightDiv.className = 'chain-col';
+    const rightDiv = document.createElement('div'); rightDiv.className = 'chain-col';
     for (let i = mid; i < shapes.length; i++) {
-      const s = shapes[i];
-      const item = document.createElement('div');
-      item.className = 'chain-item';
+      const s = shapes[i]; const item = document.createElement('div'); item.className = 'chain-item';
       const canvas = document.createElement('canvas');
       const scale = Math.min(1.0, maxDiam / (s.radius * 2));
       const size = Math.ceil(s.radius * 2 * scale) + 4;
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
       drawShape(ctx, size / 2, size / 2, i, scale);
-      item.appendChild(canvas);
-      rightDiv.appendChild(item);
+      item.appendChild(canvas); rightDiv.appendChild(item);
     }
-
-    container.appendChild(leftDiv);
-    container.appendChild(rightDiv);
+    container.appendChild(leftDiv); container.appendChild(rightDiv);
   }
 }
 
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  const div = document.createElement('div'); div.textContent = str; return div.innerHTML;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  new FusionGame();
-});
+window.addEventListener('DOMContentLoaded', () => { new FusionGame(); });
