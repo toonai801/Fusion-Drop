@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Suika Game Clone</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game-wrapper">
+  <div id="left-panel">
+    <div id="score-board">
+      <div class="score-label">SCORE</div>
+      <div id="score">0</div>
+      <div class="high-label">BEST</div>
+      <div id="high-score">0</div>
+    </div>
+    <div id="next-fruit">
+      <div class="next-label">NEXT</div>
+      <canvas id="next-canvas" width="120" height="120"></canvas>
+    </div>
+    <div id="controls">
+      <button id="btn-pause">⏸</button>
+      <button id="btn-restart">↻</button>
+    </div>
+    <div id="leaderboard-panel">
+      <div class="lb-title">🏆 LEADERBOARD</div>
+      <ol id="lb-list"></ol>
+    </div>
+  </div>
+
+  <div id="game-area">
+    <div id="dashed-line"></div>
+    <canvas id="game-canvas" width="400" height="600"></canvas>
+    <div id="game-over" class="hidden">
+      <h1>GAME OVER</h1>
+      <div id="final-score">0</div>
+      <input id="player-name" type="text" placeholder="Your name" maxlength="12">
+      <button id="btn-save">Save Score</button>
+      <button id="btn-play-again">Play Again</button>
+    </div>
+    <div id="pause-overlay" class="hidden">
+      <h1>PAUSED</h1>
+      <button id="btn-resume">Resume</button>
+    </div>
+  </div>
+</div>
+
+<script src="fruits.js"></script>
+<script src="physics.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
