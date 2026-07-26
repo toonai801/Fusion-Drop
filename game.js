@@ -149,7 +149,7 @@ class FusionGame {
 
   async fetchLeaderboard() {
     try {
-      const res = await fetch('http://localhost:8090/api/scores');
+      const res = await fetch('/api/scores');
       if (!res.ok) throw new Error('Failed to fetch scores');
       this.leaderboard = await res.json();
       this.renderLeaderboard();
@@ -160,7 +160,7 @@ class FusionGame {
 
   async fetchActivePlayers() {
     try {
-      const res = await fetch('http://localhost:8090/api/active');
+      const res = await fetch('/api/active');
       if (!res.ok) throw new Error('Failed to fetch active players');
       const active = await res.json();
       this.renderActivePlayers(active);
@@ -172,7 +172,7 @@ class FusionGame {
   async reportActive() {
     if (!this.playerName || this.paused) return;
     try {
-      await fetch('http://localhost:8090/api/active', {
+      await fetch('/api/active', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: this.playerName, score: this.score }),
@@ -644,7 +644,7 @@ class FusionGame {
     if (!this.playerName) return;
     const entry = { name: this.playerName, score: this.score, date: Date.now() };
     try {
-      const res = await fetch('http://localhost:8090/api/scores', {
+      const res = await fetch('/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
