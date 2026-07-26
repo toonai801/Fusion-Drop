@@ -508,8 +508,29 @@ body {
     gap: 8px;
   }
 
-  #leaderboard-panel, #right-panel {
+  #right-panel {
     display: none;
+  }
+
+  #leaderboard-panel {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 140px;
+    z-index: 100;
+    border-radius: 12px 12px 0 0;
+    background: rgba(10, 10, 20, 0.95);
+  }
+
+  #lb-list {
+    max-height: 80px;
+  }
+
+  #lb-active {
+    max-height: 40px;
   }
 
   #score-board {
