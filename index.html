@@ -8,30 +8,33 @@
 </head>
 <body>
 <div id="game-wrapper">
-  <!-- Mobile: Top bar with score, next, controls, leaderboard -->
-  <div id="top-bar">
-    <div id="score-board">
-      <div class="score-label">SCORE</div>
-      <div id="score">0</div>
-      <div class="high-label">BEST</div>
-      <div id="high-score">0</div>
-    </div>
-    <div id="next-fruit">
-      <div class="next-label">NEXT</div>
-      <canvas id="next-canvas" width="120" height="120"></canvas>
-    </div>
-    <div id="controls">
-      <button id="btn-pause">⏸</button>
-      <button id="btn-restart">↻</button>
-    </div>
-    <div id="leaderboard-compact">
-      <div class="lb-toggle" id="lb-toggle">🏆 Leaderboard ▼</div>
-      <div class="lb-content hidden" id="lb-content">
-        <div class="lb-title">🏆 ALL TIME</div>
-        <ol id="lb-list"></ol>
-        <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
-        <ol id="lb-active"></ol>
+  <!-- Mobile: Bottom panel with all info -->
+  <div id="bottom-panel">
+    <div id="mobile-info-row">
+      <div id="score-board">
+        <div class="score-label">SCORE</div>
+        <div id="score">0</div>
+        <div class="high-label">BEST</div>
+        <div id="high-score">0</div>
       </div>
+      <div id="next-fruit">
+        <div class="next-label">NEXT</div>
+        <canvas id="next-canvas" width="80" height="80"></canvas>
+      </div>
+      <div id="controls">
+        <button id="btn-pause">⏸</button>
+        <button id="btn-restart">↻</button>
+      </div>
+    </div>
+    <div id="mobile-lb-row">
+      <div class="lb-title">🏆 ALL TIME</div>
+      <ol id="lb-list"></ol>
+      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
+      <ol id="lb-active"></ol>
+    </div>
+    <div id="mobile-chain">
+      <div class="chain-label">CHAIN</div>
+      <div id="shape-chain"></div>
     </div>
   </div>
 

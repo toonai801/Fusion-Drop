@@ -623,39 +623,63 @@ class FusionGame {
   }
 
   renderShapeChain() {
-    const container = document.getElementById('chain-list');
-    if (!container) return;
-    container.innerHTML = '';
     const shapes = this.getShapes();
-    const panelWidth = 180, gap = 4, cols = 2;
-    const mid = Math.ceil(shapes.length / 2);
-    const cellW = (panelWidth - gap * (cols - 1)) / cols;
-    const maxDiam = cellW;
+    
+    // Desktop: vertical 2-column chain
+    const container = document.getElementById('chain-list');
+    if (container) {
+      container.innerHTML = '';
+      const panelWidth = 180, gap = 4, cols = 2;
+      const mid = Math.ceil(shapes.length / 2);
+      const cellW = (panelWidth - gap * (cols - 1)) / cols;
+      const maxDiam = cellW;
 
-    const leftDiv = document.createElement('div'); leftDiv.className = 'chain-col';
-    for (let i = 0; i < mid; i++) {
-      const s = shapes[i]; const item = document.createElement('div'); item.className = 'chain-item';
-      const canvas = document.createElement('canvas');
-      const scale = Math.min(1.0, maxDiam / (s.radius * 2));
-      const size = Math.ceil(s.radius * 2 * scale) + 4;
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      drawShape(ctx, size / 2, size / 2, i, scale);
-      item.appendChild(canvas); leftDiv.appendChild(item);
-    }
+      const leftDiv = document.createElement('div'); leftDiv.className = 'chain-col';
+      for (let i = 0; i < mid; i++) {
+        const s = shapes[i]; const item = document.createElement('div'); item.className = 'chain-item';
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1.0, maxDiam / (s.radius * 2));
+        const size = Math.ceil(s.radius * 2 * scale) + 4;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        drawShape(ctx, size / 2, size / 2, i, scale);
+        item.appendChild(canvas); leftDiv.appendChild(item);
+      }
 
-    const rightDiv = document.createElement('div'); rightDiv.className = 'chain-col';
-    for (let i = mid; i < shapes.length; i++) {
-      const s = shapes[i]; const item = document.createElement('div'); item.className = 'chain-item';
-      const canvas = document.createElement('canvas');
-      const scale = Math.min(1.0, maxDiam / (s.radius * 2));
-      const size = Math.ceil(s.radius * 2 * scale) + 4;
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      drawShape(ctx, size / 2, size / 2, i, scale);
-      item.appendChild(canvas); rightDiv.appendChild(item);
+      const rightDiv = document.createElement('div'); rightDiv.className = 'chain-col';
+      for (let i = mid; i < shapes.length; i++) {
+        const s = shapes[i]; const item = document.createElement('div'); item.className = 'chain-item';
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1.0, maxDiam / (s.radius * 2));
+        const size = Math.ceil(s.radius * 2 * scale) + 4;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        drawShape(ctx, size / 2, size / 2, i, scale);
+        item.appendChild(canvas); rightDiv.appendChild(item);
+      }
+      container.appendChild(leftDiv); container.appendChild(rightDiv);
     }
-    container.appendChild(leftDiv); container.appendChild(rightDiv);
+    
+    // Mobile: horizontal chain
+    const mobileChain = document.getElementById('shape-chain');
+    if (mobileChain) {
+      mobileChain.innerHTML = '';
+      for (let i = 0; i < shapes.length; i++) {
+        const s = shapes[i];
+        const div = document.createElement('div');
+        div.className = 'chain-shape';
+        div.style.background = s.color;
+        div.style.boxShadow = `0 0 8px ${s.glow}`;
+        div.textContent = i + 1;
+        mobileChain.appendChild(div);
+        if (i < shapes.length - 1) {
+          const arrow = document.createElement('span');
+          arrow.className = 'chain-arrow';
+          arrow.textContent = '→';
+          mobileChain.appendChild(arrow);
+        }
+      }
+    }
   }
 }
 
