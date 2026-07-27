@@ -364,7 +364,7 @@ class FusionGame {
     // Wait for last dropped to land before next drop
     const lastDropped = this.entities.find(e => e.justDropped);
     if (lastDropped) {
-      let landed = lastDropped.y + lastDropped.radius >= CANVAS_H - 4;
+      let landed = lastDropped.y + lastDropped.radius >= CANVAS_H - 16;
       if (!landed) {
         for (const e of this.entities) {
           if (e === lastDropped) continue;
@@ -383,7 +383,7 @@ class FusionGame {
       }
     } else {
       // No lastDropped entity waiting - check if any entity is still settling
-      const anySettling = this.entities.some(e => e.y > 0 && e.y + e.radius < CANVAS_H - 4);
+      const anySettling = this.entities.some(e => e.y > 0 && e.y + e.radius < CANVAS_H - 16);
       if (!anySettling || this.dropTimer > DROP_DELAY * 2) {
         this.isAiming = true;
         this.canDrop = true;
