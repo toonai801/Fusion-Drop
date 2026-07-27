@@ -598,7 +598,6 @@ body {
     padding: 2px 4px;
   }
 
-  /* Game area fills remaining space */
   #game-area {
     width: 100%;
     flex: 1;

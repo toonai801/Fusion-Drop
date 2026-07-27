@@ -69,7 +69,12 @@ class FusionGame {
     this.scale = window.devicePixelRatio || 1;
     this.canvas.width = w * this.scale;
     this.canvas.height = h * this.scale;
-    this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+    // Scale context so 400x600 game world fills the canvas
+    this.ctx.setTransform(
+      this.scale * (w / CANVAS_W), 0,
+      0, this.scale * (h / CANVAS_H),
+      0, 0
+    );
   }
 
   showIntroScreen() {
