@@ -229,11 +229,13 @@ class FusionGame {
   }
 
   handleDrop(e) {
+    console.log('handleDrop', {gameOver: this.gameOver, paused: this.paused, canDrop: this.canDrop, isAiming: this.isAiming});
     if (this.gameOver || this.paused || !this.canDrop) return;
     this.drop();
   }
 
   drop() {
+    console.log('drop() called');
     if (!this.isAiming || !this.canDrop) return;
     this.isAiming = false;
     this.canDrop = false;
@@ -283,6 +285,12 @@ class FusionGame {
     const shapes = this.getShapes();
     const deathLine = this.getDeathLine();
     this.physics.update(this.entities, CANVAS_W - 4, CANVAS_H - 4);
+
+    // Debug: log entity state
+    if (this.entities.length > 0) {
+      const e = this.entities[0];
+      console.log('update', {y: e.y.toFixed(1), vy: e.vy.toFixed(2), justDropped: e.justDropped, canDrop: this.canDrop, isAiming: this.isAiming, dropTimer: this.dropTimer});
+    }
 
     // Process merges
     const toMerge = [];
