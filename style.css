@@ -489,7 +489,7 @@ body {
   #top-bar {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     gap: 4px;
     flex-shrink: 0;
     min-height: 0;
@@ -556,7 +556,7 @@ body {
   }
 
   .lb-toggle {
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 600;
     color: #ffd700;
     letter-spacing: 1px;
@@ -564,6 +564,9 @@ body {
     cursor: pointer;
     padding: 4px;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .lb-content {
@@ -601,7 +604,6 @@ body {
     flex: 1;
     height: auto;
     min-height: 0;
-    aspect-ratio: 2/3;
     max-width: 100%;
   }
 
