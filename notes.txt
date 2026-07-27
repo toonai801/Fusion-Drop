@@ -12,7 +12,7 @@ CRITICAL BUGS:
 FIXES APPLIED TODAY:
 - Floor physics raised 12px
 - Duplicate death line removed
-- Cache bust v9
+- Cache bust v10
 - Touch events rewritten
 - Mobile UI v3 (bottom panel)
 - Debug logging added/removed
@@ -43,3 +43,15 @@ STILL BROKEN:
 - #start-screen had NO hidden class, covering everything!
 - Added class="overlay hidden" to start-screen in index.html
 - This was why user couldn't even start game
+
+2026-07-26 23:34 - CACHE BUST v10 + DEFENSIVE FIXES:
+- Fixed undefined `deathLine` in drop() method
+- Fixed aiming indicator Y to match spawn Y
+- Fixed handleMove/handleTouchMove to use CSS pixels directly
+- Added canvas null checks in physics update
+
+NEXT STEPS:
+- Test game end-to-end on mobile
+- Verify merge detection works
+- Check death line timing
+- Deploy backend for leaderboard
