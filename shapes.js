@@ -8,8 +8,10 @@ const SHAPES = [
   { name: 'singularity', radius: 78, color: '#ff0066', glow: '#ff3399', score: 128, tier: 6 },
 ];
 
-function drawShape(ctx, x, y, shapeType, scale = 1) {
-  const s = SHAPES[shapeType];
+function drawShape(ctx, x, y, shapeType, scale = 1, shapes = null) {
+  // Use provided shapes array or fall back to global SHAPES for backwards compatibility
+  const shapeList = shapes || SHAPES;
+  const s = shapeList[shapeType];
   if (!s) return;
 
   const r = s.radius * scale;

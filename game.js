@@ -10,7 +10,9 @@ class FusionGame {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
     this.nextCanvas = document.getElementById('next-canvas');
-    this.nextCtx = this.nextCanvas.getContext('2d');
+    this.nextCtx = this.nextCanvas ? this.nextCanvas.getContext('2d') : null;
+    this.nextCanvasDesk = document.getElementById('next-canvas-desk');
+    this.nextCtxDesk = this.nextCanvasDesk ? this.nextCanvasDesk.getContext('2d') : null;
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -151,6 +153,10 @@ class FusionGame {
 
     document.getElementById('btn-pause').addEventListener('click', () => this.togglePause());
     document.getElementById('btn-restart').addEventListener('click', () => this.restart());
+    const btnPauseDesk = document.getElementById('btn-pause-desk');
+    if (btnPauseDesk) btnPauseDesk.addEventListener('click', () => this.togglePause());
+    const btnRestartDesk = document.getElementById('btn-restart-desk');
+    if (btnRestartDesk) btnRestartDesk.addEventListener('click', () => this.restart());
     document.getElementById('btn-save').addEventListener('click', () => this.saveScore());
     document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
@@ -246,6 +252,7 @@ class FusionGame {
       radius: s.radius, shapeType: this.currentShape,
       active: true, settleTimer: 0,
       spawnScale: 0, targetScale: 1, justDropped: true,
+      hasBeenBelowLine: false,
     });
 
     this.currentShape = this.nextShape;
@@ -297,16 +304,22 @@ class FusionGame {
         a.spawnScale = Math.min(a.spawnScale + 0.08, a.targetScale);
       }
 
-      // Death line check
+      // Death line check - only start grace timer after shape has been below the line
       if (a.y - a.radius < deathLine && a.y > 0 && a.y < height) {
-        a.settleTimer++;
-        if (a.settleTimer > GRACE_FRAMES) { this.endGame(); return; }
-      } else { a.settleTimer = 0; }
+        // Only count if entity has fallen below line before (or is newly dropped)
+        if (a.hasBeenBelowLine || a.justDropped) {
+          a.settleTimer++;
+          if (a.settleTimer > GRACE_FRAMES) { this.endGame(); return; }
+        }
+      } else {
+        a.settleTimer = 0;
+        a.hasBeenBelowLine = true;
+      }
 
       // Merge detection
       for (let j = i + 1; j < n; j++) {
         const b = this.entities[j];
-        if (!b.active || a.shapeType !== b.shapeType || a.shapeType >= shapes.length - 1) continue;
+        if (!b.active || a.shapeType !== b.shapeType || a.shapeType >= shapes.length - 2) continue;
         const dist = Math.hypot(b.x - a.x, b.y - a.y);
         if (dist < a.radius + b.radius) {
           let already = false;
@@ -330,7 +343,7 @@ class FusionGame {
       const newS = shapes[newType];
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
 
-      if (a.shapeType === shapes.length - 1) { biggestMerged = true; this.triggerScreenShake(); }
+      if (a.shapeType === shapes.length - 2) { biggestMerged = true; this.triggerScreenShake(); }
 
       // Merge particles
       for (let p = 0; p < 12; p++) {
@@ -348,6 +361,7 @@ class FusionGame {
         radius: newS.radius, shapeType: newType,
         active: true, settleTimer: 0,
         spawnScale: 0.1, targetScale: 1, justDropped: false,
+        hasBeenBelowLine: false,
       });
 
       a.active = false; b.active = false;
@@ -429,18 +443,18 @@ class FusionGame {
     ctx.restore();
 
     // Entities
+    const currentShapes = this.getShapes();
     for (const e of this.entities) {
       const scale = e.spawnScale || 1;
-      drawShape(ctx, e.x, e.y, e.shapeType, scale);
+      drawShape(ctx, e.x, e.y, e.shapeType, scale, currentShapes);
     }
 
     // Aiming indicator
     if (this.isAiming && !this.gameOver && !this.paused) {
-      const shapes = this.getShapes();
-      const s = shapes[this.currentShape];
+      const s = currentShapes[this.currentShape];
       const deathLine = this.getDeathLine();
       const aimY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
-      drawShape(ctx, this.dropX, aimY, this.currentShape);
+      drawShape(ctx, this.dropX, aimY, this.currentShape, 1, currentShapes);
       ctx.beginPath(); ctx.setLineDash([4, 4]);
       ctx.moveTo(this.dropX, aimY + s.radius + 4); ctx.lineTo(this.dropX, this.canvas.height - 4);
       ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
@@ -475,9 +489,18 @@ class FusionGame {
       ctx.fillText('+' + p.score, p.x, p.y); ctx.restore();
     }
 
-    // Next preview
-    this.nextCtx.clearRect(0, 0, 120, 120);
-    drawShape(this.nextCtx, 60, 60, this.nextShape, 1.4);
+    // Next preview (mobile)
+    const previewShapes = this.getShapes();
+    if (this.nextCtx) {
+      this.nextCtx.clearRect(0, 0, 80, 80);
+      drawShape(this.nextCtx, 40, 40, this.nextShape, 1.0, previewShapes);
+    }
+    // Next preview (desktop)
+    // Desktop next preview
+    if (this.nextCtxDesk) {
+      this.nextCtxDesk.clearRect(0, 0, 120, 120);
+      drawShape(this.nextCtxDesk, 60, 60, this.nextShape, 1.4, previewShapes);
+    }
   }
 
   initAmbientParticles() {
@@ -638,7 +661,7 @@ class FusionGame {
         const size = Math.ceil(s.radius * 2 * scale) + 4;
         canvas.width = size; canvas.height = size;
         const ctx = canvas.getContext('2d');
-        drawShape(ctx, size / 2, size / 2, i, scale);
+        drawShape(ctx, size / 2, size / 2, i, scale, shapes);
         item.appendChild(canvas); leftDiv.appendChild(item);
       }
 
@@ -650,14 +673,14 @@ class FusionGame {
         const size = Math.ceil(s.radius * 2 * scale) + 4;
         canvas.width = size; canvas.height = size;
         const ctx = canvas.getContext('2d');
-        drawShape(ctx, size / 2, size / 2, i, scale);
+        drawShape(ctx, size / 2, size / 2, i, scale, shapes);
         item.appendChild(canvas); rightDiv.appendChild(item);
       }
       container.appendChild(leftDiv); container.appendChild(rightDiv);
     }
     
     // Mobile: horizontal chain
-    const mobileChain = document.getElementById('shape-chain');
+    const mobileChain = document.getElementById('shape-chain-mobile');
     if (mobileChain) {
       mobileChain.innerHTML = '';
       for (let i = 0; i < shapes.length; i++) {

@@ -479,7 +479,7 @@ body {
     color: rgba(0, 212, 255, 0.6);
   }
 
-  #mobile-chain #shape-chain {
+  #mobile-chain #shape-chain-mobile {
     display: flex;
     flex-direction: row;
     align-items: center;
