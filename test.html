@@ -1,12 +1,273 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test</title></head>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fusion Drop — Test Environment</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #05080f;
+    color: #00d4ff;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 { margin-bottom: 8px; font-size: 1.2rem; }
+  #test-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #test-bar button {
+    background: rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    color: #00d4ff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  #test-bar button:hover { background: rgba(0, 212, 255, 0.3); }
+  #status {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-bottom: 12px;
+  }
+  #game-wrapper {
+    width: 100%;
+    max-width: 900px;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+</style>
+</head>
 <body>
+<h1>🔧 Fusion Drop — Quick Test Page</h1>
+<div id="test-bar">
+  <button onclick="skipIntro()">Skip Intro</button>
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="spawnMerge()">Force Merge</button>
+  <button onclick="triggerGameOver()">Trigger Game Over</button>
+  <button onclick="togglePause()">Pause / Resume</button>
+  <button onclick="restart()">Restart</button>
+  <button onclick="goMobile()">Mobile View (375×667)</button>
+  <button onclick="goDesktop()">Desktop View (1024×768)</button>
+</div>
+<div id="status">Status: <span id="status-text">Ready</span></div>
+
+<div id="game-wrapper">
+  <!-- Mobile: Bottom panel with all info -->
+  <div id="bottom-panel">
+    <div id="mobile-info-row">
+      <div id="score-board">
+        <div class="score-label">SCORE</div>
+        <div id="score">0</div>
+        <div class="high-label">BEST</div>
+        <div id="high-score">0</div>
+      </div>
+      <div id="next-fruit">
+        <div class="next-label">NEXT</div>
+        <canvas id="next-canvas" width="80" height="80"></canvas>
+      </div>
+      <div id="controls">
+        <button id="btn-pause">⏸</button>
+        <button id="btn-restart">↻</button>
+      </div>
+    </div>
+    <div id="mobile-lb-row">
+      <div class="lb-title">🏆 ALL TIME</div>
+      <ol id="lb-list"></ol>
+      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
+      <ol id="lb-active"></ol>
+    </div>
+    <div id="mobile-chain">
+      <div class="chain-label">CHAIN</div>
+      <div id="shape-chain-mobile"></div>
+    </div>
+  </div>
+
+  <!-- Desktop: Left panel (hidden on mobile) -->
+  <div id="left-panel">
+    <div id="score-board-desk">
+      <div class="score-label">SCORE</div>
+      <div id="score-desk">0</div>
+      <div class="high-label">BEST</div>
+      <div id="high-score-desk">0</div>
+    </div>
+    <div id="next-fruit-desk">
+      <div class="next-label">NEXT</div>
+      <canvas id="next-canvas-desk" width="120" height="120"></canvas>
+    </div>
+    <div id="controls-desk">
+      <button id="btn-pause-desk">⏸</button>
+      <button id="btn-restart-desk">↻</button>
+    </div>
+    <div id="leaderboard-panel">
+      <div class="lb-title">🏆 ALL TIME</div>
+      <ol id="lb-list-desk"></ol>
+      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
+      <ol id="lb-active-desk"></ol>
+    </div>
+  </div>
+
+  <!-- Game area -->
+  <div id="game-area">
+    <canvas id="game-canvas" width="400" height="600"></canvas>
+    <div id="intro-screen" class="hidden">
+      <div class="intro-content">
+        <h1>FUSION DROP</h1>
+        <div class="intro-howto">
+          <h2>How to Play</h2>
+          <ol>
+            <li>Move mouse to aim, click to drop shapes</li>
+            <li>Same shapes merge into bigger shapes</li>
+            <li>Don't let shapes cross the death line</li>
+            <li>Merge two biggest shapes to unlock next level</li>
+          </ol>
+        </div>
+        <div class="intro-themes">
+          <h2>11 Themes to Unlock</h2>
+          <p>Fusion → Treasure → Slime → Potion → Planet → Food → Aquarium → Dice → Dungeon → Wizard → Cat</p>
+        </div>
+        <button id="btn-intro-start">Start Game</button>
+      </div>
+    </div>
+    <div id="start-screen" class="overlay hidden">
+      <h1>FUSION DROP</h1>
+      <input id="start-name" type="text" placeholder="Your name" maxlength="12">
+      <button id="btn-start">Start</button>
+    </div>
+    <div id="game-over" class="overlay hidden">
+      <h1>GAME OVER</h1>
+      <div id="final-score">0</div>
+      <button id="btn-save">Save Score</button>
+      <button id="btn-play-again">Play Again</button>
+    </div>
+    <div id="pause-overlay" class="overlay hidden">
+      <h1>PAUSED</h1>
+      <button id="btn-resume">Resume</button>
+    </div>
+  </div>
+
+  <!-- Right panel (desktop only) -->
+  <div id="right-panel">
+    <div id="chain-panel">
+      <div class="chain-label">FUSION CHAIN</div>
+      <div id="chain-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="themes.js?v=11"></script>
+<script src="shapes.js?v=11"></script>
+<script src="physics.js?v=11"></script>
+<script src="sounds.js?v=11"></script>
+<script src="game.js?v=11"></script>
+
 <script>
-window.onerror = function(msg, url, line) {
-  alert('ERROR: ' + msg + ' at line ' + line);
-};
+function setStatus(text) {
+  document.getElementById('status-text').textContent = text;
+  console.log('[Test]', text);
+}
+
+function skipIntro() {
+  const intro = document.getElementById('intro-screen');
+  if (intro && !intro.classList.contains('hidden')) {
+    intro.classList.add('hidden');
+    if (window.game) { window.game.enableCanvas(); window.game.showStartScreen(); }
+  }
+  setStatus('Intro skipped');
+}
+
+function startGame() {
+  skipIntro();
+  const nameInput = document.getElementById('start-name');
+  if (nameInput) nameInput.value = 'TestPlayer';
+  const btn = document.getElementById('btn-start');
+  if (btn) btn.click();
+  setStatus('Game started');
+}
+
+function spawnMerge() {
+  if (!window.game) return;
+  const g = window.game;
+  const s = g.getShapes()[0];
+  g.entities.push({
+    x: g.canvas.width / 2 - s.radius,
+    y: g.canvas.height - s.radius - 20,
+    vx: 0, vy: 0,
+    radius: s.radius, shapeType: 0,
+    active: true, settleTimer: 0,
+    spawnScale: 1, targetScale: 1, justDropped: false, hasBeenBelowLine: true,
+  });
+  g.entities.push({
+    x: g.canvas.width / 2 + s.radius,
+    y: g.canvas.height - s.radius - 20,
+    vx: 0, vy: 0,
+    radius: s.radius, shapeType: 0,
+    active: true, settleTimer: 0,
+    spawnScale: 1, targetScale: 1, justDropped: false, hasBeenBelowLine: true,
+  });
+  setStatus('Two shapes spawned for merge');
+}
+
+function triggerGameOver() {
+  if (!window.game) return;
+  const g = window.game;
+  const deathLine = g.getDeathLine();
+  for (let i = 0; i < 20; i++) {
+    g.entities.push({
+      x: g.canvas.width / 2 + (Math.random() - 0.5) * 40,
+      y: deathLine - 30,
+      vx: 0, vy: 0,
+      radius: 15, shapeType: 0,
+      active: true, settleTimer: 9999,
+      spawnScale: 1, targetScale: 1, justDropped: false, hasBeenBelowLine: true,
+    });
+  }
+  setStatus('Game over triggered');
+}
+
+function togglePause() {
+  if (window.game && window.game.togglePause) {
+    window.game.togglePause();
+    setStatus(window.game.paused ? 'Paused' : 'Resumed');
+  }
+}
+
+function restart() {
+  if (window.game && window.game.restart) {
+    window.game.restart();
+    setStatus('Restarted');
+  }
+}
+
+function goMobile() {
+  document.body.style.width = '375px';
+  document.body.style.height = '667px';
+  window.dispatchEvent(new Event('resize'));
+  setStatus('Viewport: 375×667');
+}
+
+function goDesktop() {
+  document.body.style.width = '100%';
+  document.body.style.height = 'auto';
+  window.dispatchEvent(new Event('resize'));
+  setStatus('Viewport: 100%');
+}
+
+// Auto-show intro after load
+window.addEventListener('load', () => {
+  setStatus('Loaded. Game ready.');
+});
 </script>
-<iframe src="https://toonai801.github.io/Fusion-Drop/" width="400" height="700"></iframe>
+
+<link rel="stylesheet" href="style.css?v=11">
 </body>
 </html>

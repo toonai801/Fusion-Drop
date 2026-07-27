@@ -182,36 +182,45 @@ body {
   flex-shrink: 0;
 }
 
-#shape-chain-panel {
+/* Chain panel: updated selector for new HTML structure */
+#chain-panel {
   background: rgba(20, 20, 35, 0.8);
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 12px;
-  padding: 16px;
+  padding: 10px;
 }
 
-#shape-chain {
+#chain-panel .chain-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: rgba(0, 212, 255, 0.6);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+#chain-list {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  justify-content: center;
+}
+
+.chain-col {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 4px;
+  align-items: center;
 }
 
-.chain-shape {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.chain-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  text-shadow: 0 0 4px rgba(0,0,0,0.8);
-  flex-shrink: 0;
 }
 
-.chain-arrow {
-  color: rgba(0, 212, 255, 0.4);
-  font-size: 12px;
+.chain-item canvas {
+  display: block;
 }
 
 /* Overlays */
@@ -320,6 +329,67 @@ body {
   margin-top: 16px;
 }
 
+/* Shake animation */
+.shake {
+  animation: shake 0.3s ease-in-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 851px) and (max-width: 1024px) {
+  #game-wrapper {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  #left-panel {
+    width: 150px;
+  }
+
+  #right-panel {
+    width: 140px;
+  }
+
+  #chain-panel {
+    padding: 8px;
+  }
+
+  #chain-list {
+    gap: 4px;
+  }
+
+  .chain-col {
+    gap: 3px;
+  }
+
+  #score, #score-desk {
+    font-size: 28px;
+  }
+
+  #high-score, #high-score-desk {
+    font-size: 16px;
+  }
+
+  #next-canvas-desk {
+    width: 90px;
+    height: 90px;
+  }
+
+  .score-label, .high-label, .next-label, .lb-title, .lb-subtitle {
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  #controls-desk button {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+}
+
 /* Mobile layout */
 @media (max-width: 850px) {
   body {
@@ -328,7 +398,7 @@ body {
   }
 
   #game-wrapper {
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: stretch;
     gap: 0;
     padding: 0;
@@ -337,12 +407,30 @@ body {
     max-height: 100dvh;
   }
 
-  /* Hide desktop panels and old top bar */
+  /* Hide desktop panels */
   #left-panel, #right-panel, #top-bar {
     display: none;
   }
 
-  /* Show mobile bottom panel with ALL info */
+  /* Game area must come first in visual order (column-reverse puts it at top) */
+  #game-area {
+    width: 100%;
+    flex: 1;
+    height: auto;
+    min-height: 200px;
+    max-width: 100%;
+    order: 1;
+  }
+
+  #game-canvas {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+    display: block;
+  }
+
+  /* Bottom panel sits at bottom */
   #bottom-panel {
     display: flex;
     flex-direction: column;
@@ -351,8 +439,9 @@ body {
     background: rgba(20, 20, 35, 0.9);
     border-top: 1px solid rgba(0, 212, 255, 0.3);
     flex-shrink: 0;
-    max-height: 40vh;
+    max-height: 38vh;
     overflow-y: auto;
+    order: 2;
   }
 
   #mobile-info-row {
@@ -505,22 +594,6 @@ body {
     font-size: 10px;
   }
 
-  /* Game area fills remaining space */
-  #game-area {
-    width: 100%;
-    flex: 1;
-    height: auto;
-    min-height: 0;
-    max-width: 100%;
-  }
-
-  #game-canvas {
-    width: 100%;
-    height: 100%;
-    max-height: 100%;
-    border-radius: 8px;
-  }
-
   /* Overlay scaling */
   .overlay {
     gap: 10px;
@@ -568,5 +641,45 @@ body {
 
   #mobile-lb-row ol {
     font-size: 9px;
+  }
+
+  #mobile-chain .chain-shape {
+    width: 20px;
+    height: 20px;
+    font-size: 7px;
+  }
+
+  #mobile-chain .chain-arrow {
+    font-size: 8px;
+  }
+}
+
+/* Very small viewports (320px) */
+@media (max-width: 360px) {
+  #mobile-info-row #score {
+    font-size: 16px;
+  }
+
+  #mobile-info-row #next-fruit {
+    width: 48px;
+  }
+
+  #mobile-info-row #next-canvas {
+    width: 32px;
+    height: 32px;
+  }
+
+  #mobile-info-row #controls {
+    width: 40px;
+  }
+
+  #mobile-info-row #controls button {
+    font-size: 12px;
+    padding: 4px;
+  }
+
+  #mobile-lb-row ol {
+    font-size: 8px;
+    line-height: 1.5;
   }
 }

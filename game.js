@@ -26,12 +26,11 @@ class FusionGame {
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.dropX = this.canvas.width / 2;
-    this.isAiming = true;
-    this.canDrop = true;
     this.dropTimer = 0;
-    this.gameOver = false;
-    this.paused = false;
     this.playerName = '';
+
+    // Explicit state machine
+    this.state = 'intro';
 
     this.mergeParticles = [];
     this.scorePopups = [];
@@ -48,7 +47,7 @@ class FusionGame {
     this.startActivePolling();
     this.initAmbientParticles();
     this.loop();
-    
+
     // Expose for debugging
     window.game = this;
   }
@@ -70,7 +69,7 @@ class FusionGame {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
-    
+
     // Simple approach: canvas internal size matches CSS size
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
@@ -78,12 +77,13 @@ class FusionGame {
     this.canvas.height = h;
     this.canvas.style.marginLeft = '0px';
     this.canvas.style.marginTop = '0px';
-    
+
     // Reset transform and scale to fill
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   showIntroScreen() {
+    this.state = 'intro';
     const intro = document.getElementById('intro-screen');
     const btnStart = document.getElementById('btn-intro-start');
     intro.classList.remove('hidden');
@@ -96,7 +96,7 @@ class FusionGame {
   }
 
   showStartScreen() {
-    this.paused = true;
+    this.state = 'name-entry';
     document.getElementById('start-screen').classList.remove('hidden');
     this.disableCanvas();
     const startName = document.getElementById('start-name');
@@ -108,7 +108,7 @@ class FusionGame {
       const name = startName.value.trim();
       if (!name) { startName.style.borderColor = 'rgba(255, 0, 102, 0.6)'; return; }
       this.playerName = name;
-      this.paused = false;
+      this.state = 'playing';
       this.sounds.init();
       this.sounds.startAmbient();
       document.getElementById('start-screen').classList.add('hidden');
@@ -128,26 +128,26 @@ class FusionGame {
   bindEvents() {
     this.canvas.addEventListener('mousemove', (e) => this.handleMove(e));
     this.canvas.addEventListener('click', (e) => this.handleDrop(e));
-    this.canvas.addEventListener('touchstart', (e) => { 
-      e.preventDefault(); 
+    this.canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
       this.touchStartX = e.touches[0].clientX;
       this.touchStartY = e.touches[0].clientY;
-      this.handleTouchMove(e); 
+      this.handleTouchMove(e);
     }, { passive: false });
-    
-    this.canvas.addEventListener('touchmove', (e) => { 
-      e.preventDefault(); 
-      this.handleTouchMove(e); 
+
+    this.canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      this.handleTouchMove(e);
     }, { passive: false });
-    
-    this.canvas.addEventListener('touchend', (e) => { 
+
+    this.canvas.addEventListener('touchend', (e) => {
       e.preventDefault();
       // Only drop if we didn't scroll too much
       const touch = e.changedTouches[0];
       const dx = Math.abs(touch.clientX - this.touchStartX);
       const dy = Math.abs(touch.clientY - this.touchStartY);
       if (dx < 10 && dy < 10) {
-        this.handleDrop(touch); 
+        this.handleDrop(touch);
       }
     }, { passive: false });
 
@@ -173,7 +173,7 @@ class FusionGame {
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'Enter') { if (!this.gameOver && !this.paused) this.drop(); }
+      if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.drop(); }
       if (e.code === 'Escape') this.togglePause();
     });
   }
@@ -196,7 +196,7 @@ class FusionGame {
   }
 
   async reportActive() {
-    if (!this.playerName || this.paused) return;
+    if (!this.playerName || this.state !== 'playing') return;
     try {
       await fetch('/api/active', {
         method: 'POST',
@@ -212,7 +212,7 @@ class FusionGame {
   }
 
   handleMove(e) {
-    if (!this.isAiming || this.gameOver || this.paused) return;
+    if (this.state !== 'playing') return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const shapes = this.getShapes();
@@ -221,7 +221,7 @@ class FusionGame {
   }
 
   handleTouchMove(e) {
-    if (!this.isAiming || this.gameOver || this.paused) return;
+    if (this.state !== 'playing') return;
     e.preventDefault();
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
@@ -232,14 +232,12 @@ class FusionGame {
   }
 
   handleDrop(e) {
-    if (this.gameOver || this.paused || !this.canDrop) return;
+    if (this.state !== 'playing') return;
     this.drop();
   }
 
   drop() {
-    if (!this.isAiming || !this.canDrop) return;
-    this.isAiming = false;
-    this.canDrop = false;
+    if (this.state !== 'playing') return;
     this.dropTimer = 0;
 
     const shapes = this.getShapes();
@@ -251,7 +249,8 @@ class FusionGame {
       vx: 0, vy: 2 * this.getPhysicsSpeed(),
       radius: s.radius, shapeType: this.currentShape,
       active: true, settleTimer: 0,
-      spawnScale: 0, targetScale: 1, justDropped: true,
+      spawnScale: 0, targetScale: 1,
+      immuneTimer: DROP_DELAY,
       hasBeenBelowLine: false,
     });
 
@@ -284,7 +283,7 @@ class FusionGame {
   }
 
   update() {
-    if (this.gameOver || this.paused) return;
+    if (this.state !== 'playing') return;
 
     const shapes = this.getShapes();
     const deathLine = this.getDeathLine();
@@ -304,22 +303,30 @@ class FusionGame {
         a.spawnScale = Math.min(a.spawnScale + 0.08, a.targetScale);
       }
 
-      // Death line check - only start grace timer after shape has been below the line
-      if (a.y - a.radius < deathLine && a.y > 0 && a.y < height) {
-        // Only count if entity has fallen below line before (or is newly dropped)
-        if (a.hasBeenBelowLine || a.justDropped) {
+      // Decrement immunity timer
+      if (a.immuneTimer > 0) {
+        a.immuneTimer--;
+      }
+
+      // Death line check
+      // Clean rule: after immunity expires, if entity center is above death line
+      // for GRACE_FRAMES consecutive frames AND it has crossed below at least once, game over.
+      if (a.immuneTimer <= 0 && a.y - a.radius < deathLine && a.y > 0 && a.y < height) {
+        if (a.hasBeenBelowLine) {
           a.settleTimer++;
           if (a.settleTimer > GRACE_FRAMES) { this.endGame(); return; }
         }
       } else {
         a.settleTimer = 0;
-        a.hasBeenBelowLine = true;
+        if (a.y - a.radius >= deathLine) {
+          a.hasBeenBelowLine = true;
+        }
       }
 
-      // Merge detection
+      // Merge detection - allow ALL tiers to merge
       for (let j = i + 1; j < n; j++) {
         const b = this.entities[j];
-        if (!b.active || a.shapeType !== b.shapeType || a.shapeType >= shapes.length - 2) continue;
+        if (!b.active || a.shapeType !== b.shapeType) continue;
         const dist = Math.hypot(b.x - a.x, b.y - a.y);
         if (dist < a.radius + b.radius) {
           let already = false;
@@ -334,16 +341,30 @@ class FusionGame {
     // Execute merges
     const merged = new Set();
     let biggestMerged = false;
+    const biggestType = shapes.length - 1;
     for (const m of toMerge) {
       if (merged.has(m.a) || merged.has(m.b)) continue;
       const a = this.entities[m.a], b = this.entities[m.b];
       if (!a || !b || !a.active || !b.active) continue;
 
-      const newType = a.shapeType + 1;
+      const isMaxTierMerge = a.shapeType === biggestType;
+      let newType = a.shapeType + 1;
+      let bonusScore = 0;
+
+      // Suika-like behavior: when two max-tier shapes merge, they don't evolve further.
+      // Award bonus points and create a super version (same tier, bonus points).
+      if (newType >= shapes.length) {
+        newType = biggestType;
+        bonusScore = shapes[biggestType].score * 2;
+        biggestMerged = true;
+        this.triggerScreenShake();
+      } else if (a.shapeType === biggestType - 1) {
+        biggestMerged = true;
+        this.triggerScreenShake();
+      }
+
       const newS = shapes[newType];
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-
-      if (a.shapeType === shapes.length - 2) { biggestMerged = true; this.triggerScreenShake(); }
 
       // Merge particles
       for (let p = 0; p < 12; p++) {
@@ -360,15 +381,16 @@ class FusionGame {
         vx: (a.vx + b.vx) * 0.3, vy: -1.5,
         radius: newS.radius, shapeType: newType,
         active: true, settleTimer: 0,
-        spawnScale: 0.1, targetScale: 1, justDropped: false,
+        spawnScale: 0.1, targetScale: 1,
+        immuneTimer: 0,
         hasBeenBelowLine: false,
       });
 
       a.active = false; b.active = false;
       merged.add(m.a); merged.add(m.b);
-      this.score += newS.score;
+      this.score += newS.score + bonusScore;
       this.updateScoreDisplay();
-      this.addScorePopup(mx, my - 30, newS.score);
+      this.addScorePopup(mx, my - 30, newS.score + bonusScore);
       this.addMergeFlash(mx, my);
       this.sounds.playMerge(newType);
     }
@@ -376,21 +398,12 @@ class FusionGame {
     this.entities = this.entities.filter(e => e.active);
     if (biggestMerged) this.checkLevelComplete();
 
-    // Wait for last dropped to land before next drop
-    const lastDropped = this.entities.find(e => e.justDropped);
-    if (lastDropped) {
-      // Count frames since drop - entity is considered "landed" after it exists for a few frames
-      // regardless of position (physics handles the actual landing)
-      this.dropTimer++;
-      if (this.dropTimer > DROP_DELAY) {
-        lastDropped.justDropped = false;
-        this.isAiming = true;
-        this.canDrop = true;
-      }
-    } else {
-      // No lastDropped entity waiting - always allow next drop
-      this.isAiming = true;
-      this.canDrop = true;
+    // Wait for last dropped entity to land before allowing next drop
+    // A dropped entity is the one still within its initial immune period
+    const lastDropped = this.entities.find(e => e.immuneTimer > 0);
+    if (!lastDropped) {
+      // All entities have settled enough - allow next drop
+      this.dropTimer = 0;
     }
 
     // Update particles
@@ -450,9 +463,8 @@ class FusionGame {
     }
 
     // Aiming indicator
-    if (this.isAiming && !this.gameOver && !this.paused) {
+    if (this.state === 'playing') {
       const s = currentShapes[this.currentShape];
-      const deathLine = this.getDeathLine();
       const aimY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
       drawShape(ctx, this.dropX, aimY, this.currentShape, 1, currentShapes);
       ctx.beginPath(); ctx.setLineDash([4, 4]);
@@ -496,7 +508,6 @@ class FusionGame {
       drawShape(this.nextCtx, 40, 40, this.nextShape, 1.0, previewShapes);
     }
     // Next preview (desktop)
-    // Desktop next preview
     if (this.nextCtxDesk) {
       this.nextCtxDesk.clearRect(0, 0, 120, 120);
       drawShape(this.nextCtxDesk, 60, 60, this.nextShape, 1.4, previewShapes);
@@ -539,25 +550,35 @@ class FusionGame {
   }
 
   updateScoreDisplay() {
-    const scoreEl = document.getElementById('score') || document.getElementById('score-desk');
-    if (scoreEl) scoreEl.textContent = this.score;
+    const scoreMob = document.getElementById('score');
+    const scoreDesk = document.getElementById('score-desk');
+    if (scoreMob) scoreMob.textContent = this.score;
+    if (scoreDesk) scoreDesk.textContent = this.score;
     if (this.score > this.highScore) { this.highScore = this.score; this.updateHighScoreDisplay(); }
   }
 
   updateHighScoreDisplay() {
-    const el = document.getElementById('high-score') || document.getElementById('high-score-desk');
-    if (el) el.textContent = this.highScore;
+    const elMob = document.getElementById('high-score');
+    const elDesk = document.getElementById('high-score-desk');
+    if (elMob) elMob.textContent = this.highScore;
+    if (elDesk) elDesk.textContent = this.highScore;
   }
 
   togglePause() {
-    if (this.gameOver) return;
-    this.paused = !this.paused;
-    document.getElementById('pause-overlay').classList.toggle('hidden', !this.paused);
-    this.canvas.style.pointerEvents = this.paused ? 'none' : 'auto';
+    if (this.state === 'game-over' || this.state === 'intro' || this.state === 'name-entry') return;
+    if (this.state === 'paused') {
+      this.state = 'playing';
+      document.getElementById('pause-overlay').classList.add('hidden');
+      this.canvas.style.pointerEvents = 'auto';
+    } else if (this.state === 'playing') {
+      this.state = 'paused';
+      document.getElementById('pause-overlay').classList.remove('hidden');
+      this.canvas.style.pointerEvents = 'none';
+    }
   }
 
   endGame() {
-    this.gameOver = true;
+    this.state = 'game-over';
     this.sounds.stopAmbient();
     this.sounds.playGameOver();
     document.getElementById('final-score').textContent = this.score;
@@ -566,8 +587,21 @@ class FusionGame {
   }
 
   async saveScore() {
-    if (!this.playerName) return;
-    const entry = { name: this.playerName, score: this.score, date: Date.now() };
+    // Client-side validation
+    const name = (this.playerName || '').trim();
+    if (!name) {
+      const btn = document.getElementById('btn-save');
+      if (btn) { btn.textContent = 'Name Required'; }
+      return;
+    }
+    if (typeof this.score !== 'number' || this.score < 0 || this.score > 99999999) {
+      const btn = document.getElementById('btn-save');
+      if (btn) { btn.textContent = 'Invalid Score'; }
+      return;
+    }
+
+    const entry = { name, score: this.score, date: Date.now() };
+    const btnSave = document.getElementById('btn-save');
     try {
       const res = await fetch('/api/scores', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -575,10 +609,17 @@ class FusionGame {
       });
       if (!res.ok) throw new Error('Failed to save score');
       await this.fetchLeaderboard();
-    } catch (e) { console.error('Score save failed:', e); }
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('btn-save').disabled = true;
-    document.getElementById('btn-save').textContent = 'Saved!';
+      if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saved!';
+      }
+    } catch (e) {
+      console.error('Score save failed:', e);
+      if (btnSave) {
+        btnSave.textContent = 'Save Failed - Retry?';
+        btnSave.disabled = false;
+      }
+    }
   }
 
   renderLeaderboard() {
@@ -621,29 +662,53 @@ class FusionGame {
   }
 
   restart() {
-    this.entities = []; this.score = 0;
-    this.mergeParticles = []; this.scorePopups = []; this.mergeFlashes = [];
-    this.level = 1; this.currentTheme = THEMES[0];
+    this.entities = [];
+    this.score = 0;
+    this.mergeParticles = [];
+    this.scorePopups = [];
+    this.mergeFlashes = [];
+    this.ambientParticles = [];
+    this.level = 1;
+    this.currentTheme = THEMES[0];
+    this.physics = new Physics(0.3, 0.98, 0.2);
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
-    this.dropX = this.canvas.width / 2; this.isAiming = true; this.canDrop = true;
-    this.dropTimer = 0; this.gameOver = false; this.paused = false;
-    const scoreEl = document.getElementById('score') || document.getElementById('score-desk');
-    if (scoreEl) scoreEl.textContent = '0';
+    this.dropX = this.canvas.width / 2;
+    this.dropTimer = 0;
+    this.frameCount = 0;
+    this.playerName = '';
+
+    this.state = 'intro';
+
+    // Reset both score displays independently
+    const scoreMob = document.getElementById('score');
+    const scoreDesk = document.getElementById('score-desk');
+    if (scoreMob) scoreMob.textContent = '0';
+    if (scoreDesk) scoreDesk.textContent = '0';
+
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-overlay').classList.add('hidden');
-    document.getElementById('btn-save').disabled = false;
-    document.getElementById('btn-save').textContent = 'Save Score';
+
+    const btnSave = document.getElementById('btn-save');
+    if (btnSave) {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Save Score';
+    }
+
     this.enableCanvas();
     this.updateHighScoreDisplay();
     this.renderLeaderboard();
     this.renderShapeChain();
-    this.sounds.startAmbient();
+
+    // Sound state: stop ambient and don't leak oscillators
+    this.sounds.stopAmbient();
+
+    this.showIntroScreen();
   }
 
   renderShapeChain() {
     const shapes = this.getShapes();
-    
+
     // Desktop: vertical 2-column chain
     const container = document.getElementById('chain-list');
     if (container) {
@@ -678,7 +743,7 @@ class FusionGame {
       }
       container.appendChild(leftDiv); container.appendChild(rightDiv);
     }
-    
+
     // Mobile: horizontal chain
     const mobileChain = document.getElementById('shape-chain-mobile');
     if (mobileChain) {
