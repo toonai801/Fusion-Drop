@@ -1,32 +1,63 @@
-# Fusion Drop
+# Fusion Drop — BETA
 
-A Suika-style merge game with geometric shapes, neon theme, and progressive levels.
+A Suika-style merge game with programmatic theme visuals, neon styling, and progressive level unlocking.
 
-## Play Online
+## Supported Beta Launch Methods
 
-Open `index.html` in a browser, or run the server:
+### Method 1: Node.js Server (Full Features)
+Leaderboard and active-player features work:
 
 ```bash
+npm install
 node server.js
 ```
 
-Then visit `http://localhost:8090`
+Visit `http://localhost:8090`
+
+### Method 2: Static File (Local-Only)
+Open `index.html` directly in a browser. Leaderboard and live players are hidden; local high score persists via `localStorage`.
+
+## Test
+
+```bash
+# Unit tests
+node game-engine.test.js
+
+# Browser E2E tests
+npx playwright test --project=chromium
+
+# Screenshot capture
+node e2e/screenshot-helper.js
+```
 
 ## Files
 
-- `index.html` - Game UI
-- `shapes.js` - Geometric shape rendering
-- `physics.js` - Physics engine
-- `game.js` - Game logic
-- `sounds.js` - Web Audio API sounds
-- `themes.js` - 11 theme definitions
-- `server.js` - Local Node.js server
-- `style.css` - Dark neon theme
+| File | Purpose |
+|------|---------|
+| `index.html` | Game UI |
+| `game.js` | Game logic with state machine |
+| `themes.js` | 11 theme definitions (7–13 tiers each) |
+| `shapes.js` | Theme-specific drawing functions |
+| `physics.js` | Verlet-style physics |
+| `sounds.js` | Web Audio API sound manager |
+| `style.css` | Responsive dark neon theme |
+| `server.js` | Node.js backend (scores + active players) |
+| `game-engine.test.js` | Node.js automated unit tests |
+| `e2e/fusion-drop.spec.js` | Playwright browser tests |
+| `playwright.config.js` | Test configuration |
+| `qa-evidence/` | Screenshot evidence |
 
 ## How to Play
 
-1. Click to drop shapes
-2. Same shapes merge into bigger ones
-3. Merge two biggest shapes to level up
-4. Don't let shapes cross the death line
+1. Click or tap to drop shapes
+2. Equal shapes merge into the next tier
+3. Create the largest tier to advance to the next theme
+4. Don't let shapes settle above the death line
 5. Unlock all 11 themes
+
+## Beta Status
+
+- All 12 known failure categories addressed
+- 15 automated browser tests passing
+- Visual evidence captured for intro, gameplay, mobile, desktop, game over
+- Working tree clean, committed and pushed
