@@ -68,41 +68,17 @@ class FusionGame {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
+    
+    // Simple approach: canvas internal size matches CSS size
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
-    this.scale = window.devicePixelRatio || 1;
+    this.canvas.width = w;
+    this.canvas.height = h;
+    this.canvas.style.marginLeft = '0px';
+    this.canvas.style.marginTop = '0px';
     
-    // Maintain 2:3 aspect ratio, fit within container
-    const targetRatio = CANVAS_W / CANVAS_H; // 400/600 = 0.666
-    const actualRatio = w / h;
-    let drawW, drawH;
-    if (actualRatio > targetRatio) {
-      // Container is wider than target - fit to height
-      drawH = h;
-      drawW = h * targetRatio;
-    } else {
-      // Container is taller than target - fit to width
-      drawW = w;
-      drawH = w / targetRatio;
-    }
-    
-    this.canvas.width = drawW * this.scale;
-    this.canvas.height = drawH * this.scale;
-    this.canvas.style.width = drawW + 'px';
-    this.canvas.style.height = drawH + 'px';
-    
-    // Center the canvas in the container
-    const offsetX = (w - drawW) / 2;
-    const offsetY = (h - drawH) / 2;
-    this.canvas.style.marginLeft = offsetX + 'px';
-    this.canvas.style.marginTop = offsetY + 'px';
-    
-    // Scale context to fill the canvas with game world
-    this.ctx.setTransform(
-      this.scale * (drawW / CANVAS_W), 0,
-      0, this.scale * (drawH / CANVAS_H),
-      0, 0
-    );
+    // Reset transform and scale to fill
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   showIntroScreen() {
@@ -264,8 +240,9 @@ class FusionGame {
 
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
+    const startY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
     this.entities.push({
-      x: this.dropX, y: -s.radius * 2,
+      x: this.dropX, y: startY,
       vx: 0, vy: 2 * this.getPhysicsSpeed(),
       radius: s.radius, shapeType: this.currentShape,
       active: true, settleTimer: 0,
@@ -305,7 +282,7 @@ class FusionGame {
 
     const shapes = this.getShapes();
     const deathLine = this.getDeathLine();
-    this.physics.update(this.entities, CANVAS_W - 4, CANVAS_H - 4);
+    this.physics.update(this.entities, this.canvas.width - 4, this.canvas.height - 4);
 
     // Process merges
     const toMerge = [];
@@ -320,7 +297,7 @@ class FusionGame {
       }
 
       // Death line check
-      if (a.y - a.radius < deathLine && a.y > 0) {
+      if (a.y - a.radius < deathLine && a.y > 0 && a.y < this.canvas.height) {
         a.settleTimer++;
         if (a.settleTimer > GRACE_FRAMES) { this.endGame(); return; }
       } else { a.settleTimer = 0; }
@@ -419,26 +396,26 @@ class FusionGame {
 
   draw() {
     const ctx = this.ctx;
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Background
     ctx.fillStyle = '#0d1117';
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Grid
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
     ctx.lineWidth = 0.5;
-    for (let x = 0; x < CANVAS_W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_H); ctx.stroke(); }
-    for (let y = 0; y < CANVAS_H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_W, y); ctx.stroke(); }
+    for (let x = 0; x < this.canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, this.canvas.height); ctx.stroke(); }
+    for (let y = 0; y < this.canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.canvas.width, y); ctx.stroke(); }
 
     // Border glow
-    ctx.beginPath(); ctx.roundRect(4, 4, CANVAS_W - 8, CANVAS_H - 8, 8);
+    ctx.beginPath(); ctx.roundRect(4, 4, this.canvas.width - 8, this.canvas.height - 8, 8);
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
 
     // Death line
     const deathLine = this.getDeathLine();
     ctx.beginPath(); ctx.setLineDash([6, 6]);
-    ctx.moveTo(4, deathLine); ctx.lineTo(CANVAS_W - 4, deathLine);
+    ctx.moveTo(4, deathLine); ctx.lineTo(this.canvas.width - 4, deathLine);
     ctx.strokeStyle = 'rgba(255, 0, 102, 0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.setLineDash([]);
 
@@ -462,7 +439,7 @@ class FusionGame {
       const s = shapes[this.currentShape];
       drawShape(ctx, this.dropX, deathLine - 10, this.currentShape);
       ctx.beginPath(); ctx.setLineDash([4, 4]);
-      ctx.moveTo(this.dropX, deathLine + s.radius + 4); ctx.lineTo(this.dropX, CANVAS_H - 4);
+      ctx.moveTo(this.dropX, deathLine + s.radius + 4); ctx.lineTo(this.dropX, this.canvas.height - 4);
       ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
     }
 

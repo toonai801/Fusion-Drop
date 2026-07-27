@@ -18,27 +18,24 @@ class Physics {
       e.vx *= this.friction;
       e.vy *= this.friction;
 
-      // Floor friction - kill horizontal when resting
-      if (e.y + e.radius >= height - 2 && Math.abs(e.vy) < 2) {
-        e.vx *= 0.85;
-        e.vy = 0; // Stop vertical when on floor
-      }
-
-      const r = e.radius;
-      if (e.x - r < 0) {
-        e.x = r;
+      // Walls
+      if (e.x - e.radius < 0) {
+        e.x = e.radius;
         e.vx = Math.abs(e.vx) * this.bounce;
       }
-      if (e.x + r > width) {
-        e.x = width - r;
+      if (e.x + e.radius > width) {
+        e.x = width - e.radius;
         e.vx = -Math.abs(e.vx) * this.bounce;
       }
-      if (e.y + r > height - 12) {
-        e.y = height - r - 12;
+
+      // Floor collision
+      if (e.y + e.radius > height - 2) {
+        e.y = height - e.radius - 2;
         e.vy = -Math.abs(e.vy) * this.bounce;
-        if (Math.abs(e.vy) < 1.0) e.vy = 0;
-        // Strong floor friction to prevent sliding through
-        e.vx *= 0.8;
+        if (Math.abs(e.vy) < 0.5) {
+          e.vy = 0;
+          e.vx *= 0.9; // Friction when resting
+        }
       }
     }
 
