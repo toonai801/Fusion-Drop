@@ -1,0 +1,26 @@
+FUSION DROP BUG FIX LOG
+========================
+2026-07-26 22:50 - STARTING
+
+CRITICAL BUGS:
+1. Game freezes after 1st drop on mobile
+2. Desktop layout showing on phone
+3. Shapes stuck at top, not falling
+4. Merging broken
+5. Level up impossible
+
+FIXES APPLIED TODAY:
+- Floor physics raised 12px
+- Duplicate death line removed
+- Cache bust v9
+- Touch events rewritten
+- Mobile UI v3 (bottom panel)
+- Debug logging added/removed
+- Shape sizes increased 50%
+
+NEXT FIXES NEEDED:
+- Game state machine (isAiming/canDrop/justDropped)
+- Canvas sizing on mobile
+- Physics gravity/acceleration
+- Merge detection distance
+- Death line logic
