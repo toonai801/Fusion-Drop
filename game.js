@@ -127,6 +127,17 @@ class FusionGame {
     document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
 
+    const lbToggle = document.getElementById('lb-toggle');
+    if (lbToggle) {
+      lbToggle.addEventListener('click', () => {
+        const content = document.getElementById('lb-content');
+        if (content) {
+          content.classList.toggle('hidden');
+          lbToggle.textContent = content.classList.contains('hidden') ? '🏆 Leaderboard ▼' : '🏆 Leaderboard ▲';
+        }
+      });
+    }
+
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'Enter') { if (!this.gameOver && !this.paused) this.drop(); }
       if (e.code === 'Escape') this.togglePause();
@@ -484,12 +495,14 @@ class FusionGame {
   }
 
   updateScoreDisplay() {
-    document.getElementById('score').textContent = this.score;
+    const scoreEl = document.getElementById('score') || document.getElementById('score-desk');
+    if (scoreEl) scoreEl.textContent = this.score;
     if (this.score > this.highScore) { this.highScore = this.score; this.updateHighScoreDisplay(); }
   }
 
   updateHighScoreDisplay() {
-    document.getElementById('high-score').textContent = this.highScore;
+    const el = document.getElementById('high-score') || document.getElementById('high-score-desk');
+    if (el) el.textContent = this.highScore;
   }
 
   togglePause() {
@@ -525,36 +538,41 @@ class FusionGame {
   }
 
   renderLeaderboard() {
-    const list = document.getElementById('lb-list');
-    list.innerHTML = '';
-    for (let i = 0; i < this.leaderboard.length; i++) {
-      const entry = this.leaderboard[i];
-      const li = document.createElement('li');
-      li.innerHTML = `<span>${i + 1}. ${escapeHtml(entry.name)}</span><span>${entry.score}</span>`;
-      list.appendChild(li);
-    }
-    if (this.leaderboard.length === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'No scores yet'; li.style.justifyContent = 'center';
-      li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
+    const lists = [document.getElementById('lb-list'), document.getElementById('lb-list-desk')];
+    for (const list of lists) {
+      if (!list) continue;
+      list.innerHTML = '';
+      for (let i = 0; i < this.leaderboard.length; i++) {
+        const entry = this.leaderboard[i];
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${i + 1}. ${escapeHtml(entry.name)}</span><span>${entry.score}</span>`;
+        list.appendChild(li);
+      }
+      if (this.leaderboard.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No scores yet'; li.style.justifyContent = 'center';
+        li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
+      }
     }
   }
 
   renderActivePlayers(active) {
-    const list = document.getElementById('lb-active');
-    if (!list) return;
-    list.innerHTML = '';
-    active.sort((a, b) => b.score - a.score);
-    for (let i = 0; i < active.length; i++) {
-      const p = active[i];
-      const li = document.createElement('li');
-      li.innerHTML = `<span><span class="live-dot">●</span> ${escapeHtml(p.name)}</span><span>${p.score}</span>`;
-      list.appendChild(li);
-    }
-    if (active.length === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'No active players'; li.style.justifyContent = 'center';
-      li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
+    const lists = [document.getElementById('lb-active'), document.getElementById('lb-active-desk')];
+    for (const list of lists) {
+      if (!list) continue;
+      list.innerHTML = '';
+      active.sort((a, b) => b.score - a.score);
+      for (let i = 0; i < active.length; i++) {
+        const p = active[i];
+        const li = document.createElement('li');
+        li.innerHTML = `<span><span class="live-dot">●</span> ${escapeHtml(p.name)}</span><span>${p.score}</span>`;
+        list.appendChild(li);
+      }
+      if (active.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No active players'; li.style.justifyContent = 'center';
+        li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
+      }
     }
   }
 
@@ -566,7 +584,8 @@ class FusionGame {
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.dropX = CANVAS_W / 2; this.isAiming = true; this.canDrop = true;
     this.dropTimer = 0; this.gameOver = false; this.paused = false;
-    document.getElementById('score').textContent = '0';
+    const scoreEl = document.getElementById('score') || document.getElementById('score-desk');
+    if (scoreEl) scoreEl.textContent = '0';
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-overlay').classList.add('hidden');
     document.getElementById('btn-save').disabled = false;

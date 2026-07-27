@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Fusion Drop</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div id="game-wrapper">
-  <div id="left-panel">
+  <!-- Mobile: Top bar with score, next, controls, leaderboard -->
+  <div id="top-bar">
     <div id="score-board">
       <div class="score-label">SCORE</div>
       <div id="score">0</div>
@@ -23,14 +24,42 @@
       <button id="btn-pause">⏸</button>
       <button id="btn-restart">↻</button>
     </div>
-    <div id="leaderboard-panel">
-      <div class="lb-title">🏆 ALL TIME</div>
-      <ol id="lb-list"></ol>
-      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
-      <ol id="lb-active"></ol>
+    <div id="leaderboard-compact">
+      <div class="lb-toggle" id="lb-toggle">🏆 Leaderboard ▼</div>
+      <div class="lb-content hidden" id="lb-content">
+        <div class="lb-title">🏆 ALL TIME</div>
+        <ol id="lb-list"></ol>
+        <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
+        <ol id="lb-active"></ol>
+      </div>
     </div>
   </div>
 
+  <!-- Desktop: Left panel (hidden on mobile) -->
+  <div id="left-panel">
+    <div id="score-board-desk">
+      <div class="score-label">SCORE</div>
+      <div id="score-desk">0</div>
+      <div class="high-label">BEST</div>
+      <div id="high-score-desk">0</div>
+    </div>
+    <div id="next-fruit-desk">
+      <div class="next-label">NEXT</div>
+      <canvas id="next-canvas-desk" width="120" height="120"></canvas>
+    </div>
+    <div id="controls-desk">
+      <button id="btn-pause-desk">⏸</button>
+      <button id="btn-restart-desk">↻</button>
+    </div>
+    <div id="leaderboard-panel">
+      <div class="lb-title">🏆 ALL TIME</div>
+      <ol id="lb-list-desk"></ol>
+      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
+      <ol id="lb-active-desk"></ol>
+    </div>
+  </div>
+
+  <!-- Game area -->
   <div id="game-area">
     <div id="dashed-line"></div>
     <canvas id="game-canvas" width="400" height="600"></canvas>
@@ -70,6 +99,7 @@
     </div>
   </div>
 
+  <!-- Right panel (desktop only) -->
   <div id="right-panel">
     <div id="shape-chain">
       <div class="chain-label">FUSION CHAIN</div>
@@ -78,10 +108,10 @@
   </div>
 </div>
 
-<script src="themes.js?v=4"></script>
-<script src="shapes.js?v=4"></script>
-<script src="physics.js?v=4"></script>
-<script src="sounds.js?v=4"></script>
-<script src="game.js?v=4"></script>
+<script src="themes.js?v=5"></script>
+<script src="shapes.js?v=5"></script>
+<script src="physics.js?v=5"></script>
+<script src="sounds.js?v=5"></script>
+<script src="game.js?v=5"></script>
 </body>
 </html>
