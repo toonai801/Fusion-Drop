@@ -342,8 +342,12 @@ class FusionGame {
         }
       }
     } else {
-      // If no lastDropped but we're not aiming, reset
-      if (!this.isAiming) { this.isAiming = true; this.canDrop = true; }
+      // No lastDropped entity waiting - check if any entity is still settling
+      const anySettling = this.entities.some(e => e.y > 0 && e.y + e.radius < CANVAS_H - 4);
+      if (!anySettling || this.dropTimer > DROP_DELAY * 2) {
+        this.isAiming = true;
+        this.canDrop = true;
+      }
     }
 
     // Update particles
