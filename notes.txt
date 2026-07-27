@@ -24,3 +24,17 @@ NEXT FIXES NEEDED:
 - Physics gravity/acceleration
 - Merge detection distance
 - Death line logic
+
+2026-07-26 23:25 - DEPLOYED FIXES:
+- Canvas sizing simplified (removed complex aspect ratio)
+- Physics bug: 'r' was undefined, fixed to e.radius
+- Wall collisions restored
+- Entity spawn at death line instead of y=-50
+- Canvas draw uses actual width/height
+- Game.js uses this.canvas.width/height instead of CANVAS_W/H
+
+STILL BROKEN:
+- Mobile CSS media query not matching (showing desktop layout)
+- Need to verify game flow works end-to-end
+- Touch events may still have issues
+- Backend APIs returning 404 (expected, no backend deployed)
