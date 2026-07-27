@@ -1,11 +1,11 @@
 const SHAPES = [
-  { name: 'spark',       radius: 14, color: '#00d4ff', glow: '#00f0ff', score: 2,   tier: 0 },
-  { name: 'ember',       radius: 18, color: '#0099cc', glow: '#00d4ff', score: 4,   tier: 1 },
-  { name: 'crystal',     radius: 22, color: '#3366ff', glow: '#6699ff', score: 8,   tier: 2 },
-  { name: 'shard',       radius: 27, color: '#6633cc', glow: '#9966ff', score: 16,  tier: 3 },
-  { name: 'prism',       radius: 32, color: '#9933ff', glow: '#cc66ff', score: 32,  tier: 4 },
-  { name: 'nexus',       radius: 37, color: '#cc3399', glow: '#ff66cc', score: 64,  tier: 5 },
-  { name: 'singularity', radius: 44, color: '#ff0066', glow: '#ff3399', score: 128, tier: 6 },
+  { name: 'spark',       radius: 10, color: '#00d4ff', glow: '#00f0ff', score: 2,   tier: 0 },
+  { name: 'ember',       radius: 13, color: '#0099cc', glow: '#00d4ff', score: 4,   tier: 1 },
+  { name: 'crystal',     radius: 16, color: '#3366ff', glow: '#6699ff', score: 8,   tier: 2 },
+  { name: 'shard',       radius: 20, color: '#6633cc', glow: '#9966ff', score: 16,  tier: 3 },
+  { name: 'prism',       radius: 24, color: '#9933ff', glow: '#cc66ff', score: 32,  tier: 4 },
+  { name: 'nexus',       radius: 28, color: '#cc3399', glow: '#ff66cc', score: 64,  tier: 5 },
+  { name: 'singularity', radius: 34, color: '#ff0066', glow: '#ff3399', score: 128, tier: 6 },
 ];
 
 function drawShape(ctx, x, y, shapeType, scale = 1) {

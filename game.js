@@ -67,12 +67,36 @@ class FusionGame {
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
     this.scale = window.devicePixelRatio || 1;
-    this.canvas.width = w * this.scale;
-    this.canvas.height = h * this.scale;
-    // Scale context so 400x600 game world fills the canvas
+    
+    // Maintain 2:3 aspect ratio, fit within container
+    const targetRatio = CANVAS_W / CANVAS_H; // 400/600 = 0.666
+    const actualRatio = w / h;
+    let drawW, drawH;
+    if (actualRatio > targetRatio) {
+      // Container is wider than target - fit to height
+      drawH = h;
+      drawW = h * targetRatio;
+    } else {
+      // Container is taller than target - fit to width
+      drawW = w;
+      drawH = w / targetRatio;
+    }
+    
+    this.canvas.width = drawW * this.scale;
+    this.canvas.height = drawH * this.scale;
+    this.canvas.style.width = drawW + 'px';
+    this.canvas.style.height = drawH + 'px';
+    
+    // Center the canvas in the container
+    const offsetX = (w - drawW) / 2;
+    const offsetY = (h - drawH) / 2;
+    this.canvas.style.marginLeft = offsetX + 'px';
+    this.canvas.style.marginTop = offsetY + 'px';
+    
+    // Scale context to fill the canvas with game world
     this.ctx.setTransform(
-      this.scale * (w / CANVAS_W), 0,
-      0, this.scale * (h / CANVAS_H),
+      this.scale * (drawW / CANVAS_W), 0,
+      0, this.scale * (drawH / CANVAS_H),
       0, 0
     );
   }
