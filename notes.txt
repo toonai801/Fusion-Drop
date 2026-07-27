@@ -38,3 +38,8 @@ STILL BROKEN:
 - Need to verify game flow works end-to-end
 - Touch events may still have issues
 - Backend APIs returning 404 (expected, no backend deployed)
+
+2026-07-26 23:33 - CRITICAL FIX DEPLOYED:
+- #start-screen had NO hidden class, covering everything!
+- Added class="overlay hidden" to start-screen in index.html
+- This was why user couldn't even start game

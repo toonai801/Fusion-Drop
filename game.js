@@ -23,7 +23,7 @@ class FusionGame {
     this.currentTheme = THEMES[0];
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
-    this.dropX = CANVAS_W / 2;
+    this.dropX = this.canvas.width / 2;
     this.isAiming = true;
     this.canDrop = true;
     this.dropTimer = 0;
@@ -208,11 +208,10 @@ class FusionGame {
   handleMove(e) {
     if (!this.isAiming || this.gameOver || this.paused) return;
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = CANVAS_W / rect.width;
-    const x = (e.clientX - rect.left) * scaleX;
+    const x = e.clientX - rect.left;
     const shapes = this.getShapes();
     const r = shapes[this.currentShape].radius;
-    this.dropX = Math.max(r + 4, Math.min(CANVAS_W - r - 4, x));
+    this.dropX = Math.max(r + 4, Math.min(this.canvas.width - r - 4, x));
   }
 
   handleTouchMove(e) {
@@ -220,11 +219,10 @@ class FusionGame {
     e.preventDefault();
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = CANVAS_W / rect.width;
-    const x = (touch.clientX - rect.left) * scaleX;
+    const x = touch.clientX - rect.left;
     const shapes = this.getShapes();
     const r = shapes[this.currentShape].radius;
-    this.dropX = Math.max(r + 4, Math.min(CANVAS_W - r - 4, x));
+    this.dropX = Math.max(r + 4, Math.min(this.canvas.width - r - 4, x));
   }
 
   handleDrop(e) {
@@ -240,6 +238,7 @@ class FusionGame {
 
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
+    const deathLine = this.getDeathLine();
     const startY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
     this.entities.push({
       x: this.dropX, y: startY,
@@ -274,7 +273,7 @@ class FusionGame {
     this.physics = new Physics(0.3 * this.getPhysicsSpeed(), 0.98, 0.2);
     this.sounds.playLevelComplete();
     this.renderShapeChain();
-    this.addScorePopup(CANVAS_W / 2, CANVAS_H / 2, 'LEVEL ' + this.level + '!');
+    this.addScorePopup(this.canvas.width / 2, this.canvas.height / 2, 'LEVEL ' + this.level + '!');
   }
 
   update() {
@@ -282,7 +281,9 @@ class FusionGame {
 
     const shapes = this.getShapes();
     const deathLine = this.getDeathLine();
-    this.physics.update(this.entities, this.canvas.width - 4, this.canvas.height - 4);
+    const width = this.canvas ? this.canvas.width : CANVAS_W;
+    const height = this.canvas ? this.canvas.height : CANVAS_H;
+    this.physics.update(this.entities, width - 4, height - 4);
 
     // Process merges
     const toMerge = [];
@@ -297,7 +298,7 @@ class FusionGame {
       }
 
       // Death line check
-      if (a.y - a.radius < deathLine && a.y > 0 && a.y < this.canvas.height) {
+      if (a.y - a.radius < deathLine && a.y > 0 && a.y < height) {
         a.settleTimer++;
         if (a.settleTimer > GRACE_FRAMES) { this.endGame(); return; }
       } else { a.settleTimer = 0; }
@@ -390,7 +391,7 @@ class FusionGame {
 
     for (const p of this.ambientParticles) {
       p.y -= p.speed; p.x += Math.sin(p.time) * 0.5; p.time += 0.02;
-      if (p.y < 0) { p.y = CANVAS_H + 10; p.x = Math.random() * CANVAS_W; }
+      if (p.y < 0) { p.y = this.canvas.height + 10; p.x = Math.random() * this.canvas.width; }
     }
   }
 
@@ -437,9 +438,11 @@ class FusionGame {
     if (this.isAiming && !this.gameOver && !this.paused) {
       const shapes = this.getShapes();
       const s = shapes[this.currentShape];
-      drawShape(ctx, this.dropX, deathLine - 10, this.currentShape);
+      const deathLine = this.getDeathLine();
+      const aimY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
+      drawShape(ctx, this.dropX, aimY, this.currentShape);
       ctx.beginPath(); ctx.setLineDash([4, 4]);
-      ctx.moveTo(this.dropX, deathLine + s.radius + 4); ctx.lineTo(this.dropX, this.canvas.height - 4);
+      ctx.moveTo(this.dropX, aimY + s.radius + 4); ctx.lineTo(this.dropX, this.canvas.height - 4);
       ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
     }
 
@@ -480,7 +483,7 @@ class FusionGame {
   initAmbientParticles() {
     for (let i = 0; i < 20; i++) {
       this.ambientParticles.push({
-        x: Math.random() * CANVAS_W, y: Math.random() * CANVAS_H,
+        x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height,
         size: 1 + Math.random() * 2, speed: 0.2 + Math.random() * 0.5,
         color: ['rgba(0, 212, 255, 0.3)', 'rgba(0, 240, 255, 0.2)', 'rgba(255, 0, 102, 0.15)'][Math.floor(Math.random() * 3)],
         alpha: 0.3 + Math.random() * 0.4, time: Math.random() * Math.PI * 2,
@@ -600,7 +603,7 @@ class FusionGame {
     this.level = 1; this.currentTheme = THEMES[0];
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
-    this.dropX = CANVAS_W / 2; this.isAiming = true; this.canDrop = true;
+    this.dropX = this.canvas.width / 2; this.isAiming = true; this.canDrop = true;
     this.dropTimer = 0; this.gameOver = false; this.paused = false;
     const scoreEl = document.getElementById('score') || document.getElementById('score-desk');
     if (scoreEl) scoreEl.textContent = '0';
