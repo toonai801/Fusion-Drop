@@ -33,8 +33,8 @@ class Physics {
         e.x = width - r;
         e.vx = -Math.abs(e.vx) * this.bounce;
       }
-      if (e.y + r > height) {
-        e.y = height - r;
+      if (e.y + r > height - 8) {
+        e.y = height - r - 8;
         e.vy = -Math.abs(e.vy) * this.bounce;
         if (Math.abs(e.vy) < 1.0) e.vy = 0;
         // Strong floor friction to prevent sliding through
