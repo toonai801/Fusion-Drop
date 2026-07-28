@@ -180,29 +180,23 @@ class FusionGame {
 
   async fetchLeaderboard() {
     try {
-      const res = await fetch('/api/scores');
-      if (!res.ok) throw new Error('Failed to fetch scores');
-      this.leaderboard = await res.json();
+      const scores = await backend.fetchScores();
+      this.leaderboard = scores.map(s => ({ name: s.player_name, score: s.score, date: s.created_at }));
       this.renderLeaderboard();
     } catch (e) { console.error('Leaderboard fetch failed:', e); }
   }
 
   async fetchActivePlayers() {
     try {
-      const res = await fetch('/api/active');
-      if (!res.ok) throw new Error('Failed to fetch active players');
-      this.renderActivePlayers(await res.json());
+      const active = await backend.fetchActivePlayers();
+      this.renderActivePlayers(active.map(p => ({ name: p.player_name, score: p.score, lastSeen: p.last_seen })));
     } catch (e) { console.error('Active players fetch failed:', e); }
   }
 
   async reportActive() {
     if (!this.playerName || this.state !== 'playing') return;
     try {
-      await fetch('/api/active', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: this.playerName, score: this.score }),
-      });
+      await backend.heartbeat(this.playerName, this.score);
     } catch (e) { /* Silent fail for heartbeats */ }
   }
 
@@ -603,11 +597,8 @@ class FusionGame {
     const entry = { name, score: this.score, date: Date.now() };
     const btnSave = document.getElementById('btn-save');
     try {
-      const res = await fetch('/api/scores', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry),
-      });
-      if (!res.ok) throw new Error('Failed to save score');
+      const ok = await backend.saveScore(name, this.score, this.level);
+      if (!ok) throw new Error('Failed to save score');
       await this.fetchLeaderboard();
       if (btnSave) {
         btnSave.disabled = true;
