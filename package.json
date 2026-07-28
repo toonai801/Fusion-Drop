@@ -1,6 +1,17 @@
 {
-  "dependencies": {
-    "@playwright/test": "^1.62.0",
-    "playwright": "^1.62.0"
-  }
+  "name": "fusion-drop",
+  "version": "1.0.0",
+  "description": "A Suika-style merge game",
+  "scripts": {
+    "test": "npm run test:syntax && npm run test:unit",
+    "test:all": "npm run test:syntax && npm run test:unit && npm run test:e2e",
+    "test:syntax": "node scripts/test-syntax.js",
+    "test:unit": "node game-engine.test.js",
+    "test:e2e": "npx playwright test",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  },
+  "dependencies": {}
 }
