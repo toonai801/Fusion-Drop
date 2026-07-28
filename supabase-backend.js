@@ -53,8 +53,11 @@ class SupabaseBackend {
             const response = await fetch(`${this.url}/rest/v1/scores`, {
                 method: 'POST',
                 headers: this.headers,
-                body: JSON.stringify({ player_name: playerName, score, level })
+                body: JSON.stringify({ player_name: playerName, score: score, level: level })
             });
+            if (response.ok) {
+                console.log('Score saved successfully');
+            }
             return response.ok;
         } catch (e) {
             console.error('saveScore failed:', e);
