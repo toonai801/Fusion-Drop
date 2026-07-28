@@ -66,11 +66,31 @@ class FusionGame {
   }
 
   resize() {
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
+    const parentRect = this.canvas.parentElement.getBoundingClientRect();
+    const wrapperRect = document.getElementById('game-wrapper').getBoundingClientRect();
+    
+    // Available width/height within the wrapper, accounting for side panels
+    let w = parentRect.width;
+    let h = wrapperRect.height;
+    
+    // Constrain to aspect ratio and max dimensions
+    const maxW = 400;
+    const maxH = 600;
+    const aspect = maxW / maxH;
+    
+    if (w / h > aspect) {
+      w = h * aspect;
+    } else {
+      h = w / aspect;
+    }
+    
+    w = Math.min(w, maxW);
+    h = Math.min(h, maxH);
+    
+    // Ensure minimum sizes
+    w = Math.max(w, 300);
+    h = Math.max(h, 400);
 
-    // Simple approach: canvas internal size matches CSS size
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
     this.canvas.width = w;
