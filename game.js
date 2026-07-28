@@ -179,22 +179,44 @@ class FusionGame {
   }
 
   async fetchLeaderboard() {
+    if (typeof backend === 'undefined') {
+      // Static file mode — use localStorage only
+      try {
+        const local = JSON.parse(localStorage.getItem('fusion_drop_scores') || '[]');
+        this.leaderboard = local.sort((a, b) => b.score - a.score).slice(0, 50);
+        this.renderLeaderboard();
+      } catch (_) { this.leaderboard = []; this.renderLeaderboard(); }
+      return;
+    }
     try {
       const scores = await backend.fetchScores();
       this.leaderboard = scores.map(s => ({ name: s.player_name, score: s.score, date: s.created_at }));
       this.renderLeaderboard();
-    } catch (e) { console.error('Leaderboard fetch failed:', e); }
+    } catch (e) {
+      console.error('Leaderboard fetch failed:', e);
+      // Fallback to localStorage for static hosting
+      try {
+        const local = JSON.parse(localStorage.getItem('fusion_drop_scores') || '[]');
+        this.leaderboard = local.sort((a, b) => b.score - a.score).slice(0, 50);
+        this.renderLeaderboard();
+      } catch (_) {}
+    }
   }
 
   async fetchActivePlayers() {
+    if (typeof backend === 'undefined') { this.renderActivePlayers([]); return; }
     try {
       const active = await backend.fetchActivePlayers();
       this.renderActivePlayers(active.map(p => ({ name: p.player_name, score: p.score, lastSeen: p.last_seen })));
-    } catch (e) { console.error('Active players fetch failed:', e); }
+    } catch (e) {
+      console.error('Active players fetch failed:', e);
+      this.renderActivePlayers([]);
+    }
   }
 
   async reportActive() {
     if (!this.playerName || this.state !== 'playing') return;
+    if (typeof backend === 'undefined') return;
     try {
       await backend.heartbeat(this.playerName, this.score);
     } catch (e) { /* Silent fail for heartbeats */ }
@@ -596,9 +618,25 @@ class FusionGame {
 
     const entry = { name, score: this.score, date: Date.now() };
     const btnSave = document.getElementById('btn-save');
+    let saved = false;
+
+    // Always save to localStorage as fallback / primary for static hosting
     try {
-      const ok = await backend.saveScore(name, this.score, this.level);
-      if (!ok) throw new Error('Failed to save score');
+      const existing = JSON.parse(localStorage.getItem('fusion_drop_scores') || '[]');
+      existing.push(entry);
+      existing.sort((a, b) => b.score - a.score);
+      localStorage.setItem('fusion_drop_scores', JSON.stringify(existing.slice(0, 50)));
+      this.leaderboard = existing.slice(0, 50);
+      saved = true;
+    } catch (e) {
+      console.error('localStorage save failed:', e);
+    }
+
+    try {
+      if (typeof backend !== 'undefined') {
+        const ok = await backend.saveScore(name, this.score, this.level);
+        if (!ok) throw new Error('Failed to save score');
+      }
       await this.fetchLeaderboard();
       if (btnSave) {
         btnSave.disabled = true;
@@ -606,7 +644,14 @@ class FusionGame {
       }
     } catch (e) {
       console.error('Score save failed:', e);
-      if (btnSave) {
+      // On static hosting, localStorage is the primary store
+      if (saved) {
+        this.renderLeaderboard();
+        if (btnSave) {
+          btnSave.disabled = true;
+          btnSave.textContent = 'Saved (local)';
+        }
+      } else if (btnSave) {
         btnSave.textContent = 'Save Failed - Retry?';
         btnSave.disabled = false;
       }

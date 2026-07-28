@@ -164,11 +164,17 @@
   </div>
 </div>
 
-<script src="themes.js?v=11"></script>
-<script src="shapes.js?v=11"></script>
-<script src="physics.js?v=11"></script>
-<script src="sounds.js?v=11"></script>
-<script src="game.js?v=11"></script>
+<script src="supabase-backend.js?v=13"></script>
+<script>
+const SUPABASE_URL = 'https://ybnvqonahypxlsjjpzsx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_XJm7JvqINIa1Od0DUIJNxg_Ij0KSRBU';
+const backend = new SupabaseBackend(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<script src="themes.js?v=13"></script>
+<script src="shapes.js?v=13"></script>
+<script src="physics.js?v=13"></script>
+<script src="sounds.js?v=13"></script>
+<script src="game.js?v=13"></script>
 
 <script>
 function setStatus(text) {
@@ -268,6 +274,6 @@ window.addEventListener('load', () => {
 });
 </script>
 
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=13">
 </body>
 </html>
