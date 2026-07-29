@@ -24,7 +24,7 @@ class FusionGame {
     this.level = 1;
     this.currentTheme = THEMES[0];
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
-    this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
+    this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER, this.nextShape);
     this.dropX = this.canvas.width / 2;
     this.dropTimer = 0;
     this.playerName = '';
@@ -56,9 +56,12 @@ class FusionGame {
   getPhysicsSpeed() { return getPhysicsSpeed(this.level); }
   getDeathLine() { return DROP_LINE_Y + getDeathLineOffset(this.level); }
 
-  randomShapeTier(maxTier) {
+  randomShapeTier(maxTier, excludeTier = null) {
     const weights = [];
     for (let i = 0; i <= maxTier; i++) weights.push(Math.pow(0.55, i));
+    if (excludeTier !== null && excludeTier >= 0 && excludeTier <= maxTier) {
+      weights[excludeTier] = 0; // Don't pick the excluded tier
+    }
     const total = weights.reduce((a, b) => a + b, 0);
     let r = Math.random() * total;
     for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r <= 0) return i; }
@@ -291,7 +294,7 @@ class FusionGame {
     });
 
     this.currentShape = this.nextShape;
-    this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
+    this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER, this.currentShape);
     this.sounds.playDrop();
   }
 
@@ -728,7 +731,7 @@ class FusionGame {
     this.currentTheme = THEMES[0];
     this.physics = new Physics(0.3, 0.98, 0.2);
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
-    this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
+    this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER, this.nextShape);
     this.dropX = this.canvas.width / 2;
     this.dropTimer = 0;
     this.frameCount = 0;
