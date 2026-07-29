@@ -242,6 +242,10 @@ body {
   display: none !important;
 }
 
+#intro-screen.hidden {
+  display: none !important;
+}
+
 #start-screen h1,
 #game-over h1,
 #pause-overlay h1,
