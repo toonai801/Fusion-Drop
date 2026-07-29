@@ -73,36 +73,37 @@ class FusionGame {
     const wrapperRect = document.getElementById('game-wrapper').getBoundingClientRect();
     
     // Available width/height within the wrapper, accounting for side panels
-    let w = parentRect.width;
-    let h = wrapperRect.height;
+    let displayW = parentRect.width;
+    let displayH = wrapperRect.height;
     
-    // Constrain to aspect ratio and max dimensions
-    const maxW = 400;
-    const maxH = 600;
-    const aspect = maxW / maxH;
+    // Fixed internal game resolution
+    const gameW = CANVAS_W;
+    const gameH = CANVAS_H;
+    const aspect = gameW / gameH;
     
-    if (w / h > aspect) {
-      w = h * aspect;
+    // Calculate display size while maintaining aspect ratio
+    if (displayW / displayH > aspect) {
+      displayW = displayH * aspect;
     } else {
-      h = w / aspect;
+      displayH = displayW / aspect;
     }
     
-    w = Math.min(w, maxW);
-    h = Math.min(h, maxH);
-    
     // Ensure minimum sizes
-    w = Math.max(w, 300);
-    h = Math.max(h, 400);
+    displayW = Math.max(displayW, 300);
+    displayH = Math.max(displayH, 400);
 
-    this.canvas.style.width = w + 'px';
-    this.canvas.style.height = h + 'px';
-    this.canvas.width = w;
-    this.canvas.height = h;
+    // Set CSS display size only — keep internal resolution fixed
+    this.canvas.style.width = displayW + 'px';
+    this.canvas.style.height = displayH + 'px';
+    
+    // Keep internal canvas resolution fixed at game dimensions
+    if (this.canvas.width !== gameW || this.canvas.height !== gameH) {
+      this.canvas.width = gameW;
+      this.canvas.height = gameH;
+    }
+    
     this.canvas.style.marginLeft = '0px';
     this.canvas.style.marginTop = '0px';
-
-    // Reset transform and scale to fill
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   showIntroScreen() {
