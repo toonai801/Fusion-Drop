@@ -69,6 +69,16 @@ class FusionGame {
   }
 
   resize() {
+    // On mobile (max-width: 850px), let CSS handle sizing via media queries
+    if (window.innerWidth <= 850) {
+      // Just ensure internal resolution is correct
+      if (this.canvas.width !== CANVAS_W || this.canvas.height !== CANVAS_H) {
+        this.canvas.width = CANVAS_W;
+        this.canvas.height = CANVAS_H;
+      }
+      return;
+    }
+    
     const parentRect = this.canvas.parentElement.getBoundingClientRect();
     const wrapperRect = document.getElementById('game-wrapper').getBoundingClientRect();
     
