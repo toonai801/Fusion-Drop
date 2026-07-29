@@ -92,9 +92,9 @@ class FusionGame {
     displayW = Math.max(displayW, 300);
     displayH = Math.max(displayH, 400);
 
-    // Set CSS display size only — keep internal resolution fixed
-    this.canvas.style.width = displayW + 'px';
-    this.canvas.style.height = displayH + 'px';
+    // Set CSS display size — scale up to fill available space
+    this.canvas.style.width = Math.floor(displayW) + 'px';
+    this.canvas.style.height = Math.floor(displayH) + 'px';
     
     // Keep internal canvas resolution fixed at game dimensions
     if (this.canvas.width !== gameW || this.canvas.height !== gameH) {
