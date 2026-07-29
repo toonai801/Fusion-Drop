@@ -161,29 +161,37 @@ class FusionGame {
 
   bindEvents() {
     this.canvas.addEventListener('mousemove', (e) => this.handleMove(e));
-    this.canvas.addEventListener('click', (e) => this.handleDrop(e));
-    this.canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      this.touchStartX = e.touches[0].clientX;
-      this.touchStartY = e.touches[0].clientY;
-      this.handleTouchMove(e);
-    }, { passive: false });
 
-    this.canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      this.handleTouchMove(e);
-    }, { passive: false });
+    // Use touch events on mobile, click on desktop — prevent double-firing
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouch) {
+      this.canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.touchMoved = false;
+        this.handleTouchMove(e);
+      }, { passive: false });
 
-    this.canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      // Only drop if we didn't scroll too much
-      const touch = e.changedTouches[0];
-      const dx = Math.abs(touch.clientX - this.touchStartX);
-      const dy = Math.abs(touch.clientY - this.touchStartY);
-      if (dx < 10 && dy < 10) {
-        this.handleDrop(touch);
-      }
-    }, { passive: false });
+      this.canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        this.touchMoved = true;
+        this.handleTouchMove(e);
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (this.touchMoved) return;
+        const touch = e.changedTouches[0];
+        const dx = Math.abs(touch.clientX - this.touchStartX);
+        const dy = Math.abs(touch.clientY - this.touchStartY);
+        if (dx < 10 && dy < 10) {
+          this.handleDrop(touch);
+        }
+      }, { passive: false });
+    } else {
+      this.canvas.addEventListener('click', (e) => this.handleDrop(e));
+    }
 
     document.getElementById('btn-pause').addEventListener('click', () => this.togglePause());
     document.getElementById('btn-restart').addEventListener('click', () => this.restart());
@@ -288,7 +296,8 @@ class FusionGame {
 
   drop() {
     if (this.state !== 'playing') return;
-    this.dropTimer = 0;
+    // Enforce drop cooldown — must wait for previous drop to settle
+    if (this.entities.some(e => e.immuneTimer > 0)) return;
 
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
