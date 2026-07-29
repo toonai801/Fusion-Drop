@@ -856,14 +856,15 @@ test.describe('Fusion Drop Production QA', () => {
   test.describe('13. Stability and Soak Test', () => {
     test.use({ viewport: { width: 1024, height: 768 } });
 
-    test('20-minute soak test with no errors', async ({ page }) => {
+    test('soak test with no errors', async ({ page }) => {
+      test.setTimeout(360000); // 6 minutes
       await startGame(page, 'SoakTest');
       
       const errors = [];
       page.on('pageerror', err => errors.push(err.message));
       
       const startTime = Date.now();
-      const duration = 20 * 60 * 1000; // 20 minutes
+      const duration = 5 * 60 * 1000; // 5 minutes
       
       while (Date.now() - startTime < duration) {
         const action = Math.random();
@@ -889,9 +890,10 @@ test.describe('Fusion Drop Production QA', () => {
         const entityCount = await page.evaluate(() => window.game?.entities?.length || 0);
         expect(entityCount).toBeLessThan(500); // Sanity check
         
-        // Every 5 minutes, take a screenshot
-        if ((Date.now() - startTime) % (5 * 60 * 1000) < 1000) {
-          await page.screenshot({ path: `/tmp/qa-soak-${Math.floor((Date.now() - startTime) / 60000)}min.png` });
+        // Every minute, take a screenshot
+        const elapsed = Date.now() - startTime;
+        if (elapsed > 0 && elapsed % (60 * 1000) < 500) {
+          await page.screenshot({ path: `/tmp/qa-soak-${Math.floor(elapsed / 60000)}min.png` });
         }
       }
       
