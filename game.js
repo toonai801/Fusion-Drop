@@ -232,9 +232,9 @@ class FusionGame {
     }
     try {
       const scores = await backend.fetchScores();
-      // Filter out test data and 0 scores
+      // Filter out 0 scores only — real player names may contain "test"
       this.leaderboard = scores
-        .filter(s => s.score > 0 && !s.player_name.toLowerCase().includes('test'))
+        .filter(s => s.score > 0)
         .map(s => ({ name: s.player_name, score: s.score, date: s.created_at }));
       this.renderLeaderboard();
     } catch (e) {
