@@ -232,7 +232,10 @@ class FusionGame {
     }
     try {
       const scores = await backend.fetchScores();
-      this.leaderboard = scores.map(s => ({ name: s.player_name, score: s.score, date: s.created_at }));
+      // Filter out test data and 0 scores
+      this.leaderboard = scores
+        .filter(s => s.score > 0 && !s.player_name.toLowerCase().includes('test'))
+        .map(s => ({ name: s.player_name, score: s.score, date: s.created_at }));
       this.renderLeaderboard();
     } catch (e) {
       console.error('Leaderboard fetch failed:', e);
@@ -656,6 +659,13 @@ class FusionGame {
     if (typeof this.score !== 'number' || this.score < 0 || this.score > 99999999) {
       const btn = document.getElementById('btn-save');
       if (btn) { btn.textContent = 'Invalid Score'; }
+      return;
+    }
+
+    // Don't save scores of 0 — you didn't even play
+    if (this.score === 0) {
+      const btn = document.getElementById('btn-save');
+      if (btn) { btn.textContent = 'Score is 0'; }
       return;
     }
 
