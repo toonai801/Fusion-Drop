@@ -576,9 +576,12 @@ test.describe('Fusion Drop Production QA', () => {
       await startGame(page, 'PersistTest');
       await triggerNaturalGameOver(page);
       
+      // Set a non-zero score (natural game over may have 0 merges = 0 score)
+      await page.evaluate(() => { window.game.score = 100; });
+      
       // Save score
       await page.click('#btn-save');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(3000);
       
       // Refresh page
       await page.reload();
@@ -615,6 +618,8 @@ test.describe('Fusion Drop Production QA', () => {
       });
       
       await startGame(page, `SupabaseTest_${Date.now()}`);
+      // Ensure non-zero score so save actually POSTs (game rejects score=0 saves)
+      await page.evaluate(() => { window.game.score = 100; });
       await triggerNaturalGameOver(page);
       await page.click('#btn-save');
       await page.waitForTimeout(2000);
