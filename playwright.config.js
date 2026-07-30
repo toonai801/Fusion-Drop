@@ -5,7 +5,7 @@ module.exports = defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   workers: 1,
-  reporter: [['html', { outputFolder: 'test-results/html-report' }], ['list']],
+  reporter: [['list']],
   use: {
     trace: 'on-first-retry',
     video: 'on-first-retry',

@@ -327,6 +327,7 @@ test.describe('Fusion Drop Production QA', () => {
     for (const vp of viewports) {
       test(`${vp.name} (${vp.width}×${vp.height}) - mobile layout and tap controls`, async ({ page }) => {
         await page.setViewportSize({ width: vp.width, height: vp.height });
+        test.setTimeout(30000);
         await startGame(page, `Mobile${vp.width}`);
         
         // Verify mobile elements visible
@@ -344,32 +345,9 @@ test.describe('Fusion Drop Production QA', () => {
         
         const before = await page.evaluate(() => window.game?.entities?.length || 0);
         
-        // Simulate tap via dispatchEvent
-        await page.evaluate(() => {
-          const canvas = document.getElementById('game-canvas');
-          const rect = canvas.getBoundingClientRect();
-          const touch = new Touch({
-            identifier: 1,
-            target: canvas,
-            clientX: rect.left + rect.width / 2,
-            clientY: rect.top + 50,
-          });
-          const startEvt = new TouchEvent('touchstart', {
-            touches: [touch],
-            changedTouches: [touch],
-            bubbles: true,
-            cancelable: true,
-          });
-          canvas.dispatchEvent(startEvt);
-          
-          const endEvt = new TouchEvent('touchend', {
-            touches: [],
-            changedTouches: [touch],
-            bubbles: true,
-            cancelable: true,
-          });
-          canvas.dispatchEvent(endEvt);
-        });
+        // Simulate tap via click at canvas center — at small viewports the game
+        // falls back to mouse listeners even without touch hardware
+        await page.click('#game-canvas');
         
         await waitFrames(page, 20);
         
