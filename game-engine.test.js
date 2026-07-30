@@ -60,7 +60,9 @@ sandbox.window = {
     createOscillator() { return { connect: () => {}, start: () => {}, stop: () => {}, frequency: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} }, type: 'sine' }; }
     createGain() { return { connect: () => {}, gain: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {}, linearRampToValueAtTime: () => {} } }; }
   },
-  webkitAudioContext: class MockAudioContext {}
+  webkitAudioContext: class MockAudioContext {},
+  navigator: { maxTouchPoints: 0, userAgent: "node" },
+  ontouchstart: null,
 };
 
 // Mock canvas with parentElement for resize()
