@@ -110,11 +110,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Static files
+  // Static files — with path-traversal protection.
   let filePath = pathname === '/' ? '/index.html' : pathname;
-  filePath = path.join(__dirname, filePath);
-  const ext = path.extname(filePath).toLowerCase();
-  fs.readFile(filePath, (err, data) => {
+  const resolved = path.resolve(__dirname, '.' + filePath);
+  const root = path.resolve(__dirname);
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+    res.writeHead(403); res.end('Forbidden');
+    return;
+  }
+  const ext = path.extname(resolved).toLowerCase();
+  fs.readFile(resolved, (err, data) => {
     if (err) {
       res.writeHead(404); res.end('Not found');
       return;

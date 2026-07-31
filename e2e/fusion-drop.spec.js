@@ -1,10 +1,10 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-const GAME_URL = 'http://localhost:3000';
+const GAME_URL = 'http://localhost:8090';
 const LOCAL_FILE = 'file://' + __dirname + '/../index.html';
 const TEST_HTML   = 'file://' + __dirname + '/../test.html';
-const USE_SERVER = false; // Toggle if server is available
+const USE_SERVER = true;  // Server is the supported launch method per README.
 const ENTRY_URL = USE_SERVER ? GAME_URL : TEST_HTML;
 
 /**
