@@ -95,6 +95,9 @@ class FusionGame {
     this.dropsCount = 0;
     this.mergesCount = 0;
     this.achievements = new Set();
+    this._longestChain = 0;
+    this._chainLength = 0;
+    this._lastMergeAt = 0;
 
     // Phase 4 — forward client-side errors to /api/diag. Best-effort, no
     // throw if the network call fails.
@@ -502,6 +505,8 @@ class FusionGame {
     if (this.state !== 'playing') return;
     this.dropTimer = 0;
     this.dropsCount++;
+    this._chainLength = 0;
+    this._lastMergeAt = 0;
 
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
@@ -660,6 +665,19 @@ class FusionGame {
       this.addMergeFlash(mx, my);
       this.sounds.playMerge(newType);
       this.mergesCount++;
+      // Phase B polish-20: track chain length. A chain is multiple
+      // merges that happen within a short time window (~2 s) of each
+      // other. Reset chain on long gap.
+      const now = Date.now();
+      if (this._lastMergeAt && (now - this._lastMergeAt) < 2000) {
+        this._chainLength = (this._chainLength || 1) + 1;
+      } else {
+        this._chainLength = 1;
+      }
+      this._lastMergeAt = now;
+      if (!this._longestChain || this._chainLength > this._longestChain) {
+        this._longestChain = this._chainLength;
+      }
       this.checkAchievements();
     }
 
@@ -1154,7 +1172,10 @@ class FusionGame {
       statsEl.innerHTML =
         '<div>Mode: <strong>' + modeName + '</strong></div>' +
         '<div>Drops: <strong>' + this.dropsCount + '</strong> &nbsp; Merges: <strong>' + this.mergesCount + '</strong></div>' +
-        '<div>Score/Drop: <strong>' + perDrop + '</strong> &nbsp; Achievements: <strong>' + this.achievements.size + '</strong></div>';
+        '<div>Score/Drop: <strong>' + perDrop + '</strong> &nbsp; Achievements: <strong>' + this.achievements.size + '</strong></div>' +
+        ((this._longestChain && this._longestChain > 1)
+          ? '<div>Best chain: <strong>' + this._longestChain + '</strong> merges in a row</div>'
+          : '');
     }
     const pbEl = document.getElementById('game-over-pb');
     if (pbEl) {
@@ -1277,6 +1298,9 @@ class FusionGame {
     this._achievementQueue = [];
     this._activeToast = null;
     this.timeLeft = 0;
+    this._longestChain = 0;
+    this._chainLength = 0;
+    this._lastMergeAt = 0;
 
     this.state = 'intro';
 
