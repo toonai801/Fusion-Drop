@@ -858,10 +858,23 @@ class FusionGame {
 
     ctx.beginPath(); ctx.setLineDash([6, 6]);
     ctx.moveTo(4, deathLine); ctx.lineTo(this.canvas.width - 4, deathLine);
-    const lineAlpha = 0.4 + danger * 0.5;
+    // Phase B polish-23: bump base alpha so the dashed line is visible
+    // even before any shape crosses it.
+    const lineAlpha = 0.55 + danger * 0.45;
     ctx.strokeStyle = `rgba(255, ${Math.round(80 - danger * 60)}, ${Math.round(140 - danger * 60)}, ${lineAlpha})`;
     ctx.lineWidth = 1.5 + danger * 1.5; ctx.stroke();
     ctx.setLineDash([]);
+
+    // Phase B polish-23: faint 'DEATH' label at the right edge so a new
+    // player knows what the dashed line is.
+    if (GAME_MODES[this.mode] && GAME_MODES[this.mode].deathLine) {
+      ctx.save();
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = `rgba(255, 80, 140, ${0.35 + danger * 0.4})`;
+      ctx.fillText('DEATH', this.canvas.width - 8, deathLine - 4);
+      ctx.restore();
+    }
 
     // Level indicator
     ctx.save();
