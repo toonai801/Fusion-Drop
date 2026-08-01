@@ -151,6 +151,18 @@ class FusionGame {
 
   bindModeButtons() {
     if (typeof document === 'undefined' || !document.querySelectorAll) return;
+    // Daily-theme button: jump-start the run at today's theme index.
+    const dailyBtn = document.getElementById('btn-play-daily');
+    if (dailyBtn) {
+      dailyBtn.addEventListener('click', () => {
+        const idx = this.getDailyThemeIndex();
+        this.level = idx + 1;
+        this.currentTheme = THEMES[Math.min(this.level - 1, THEMES.length - 1)];
+        if (this.sounds && typeof this.sounds.setThemeIndex === 'function') {
+          this.sounds.setThemeIndex(this.level - 1);
+        }
+      });
+    }
     const buttons = document.querySelectorAll('.mode-btn');
     buttons.forEach(btn => {
       btn.addEventListener('click', () => {

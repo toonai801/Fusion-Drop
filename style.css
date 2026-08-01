@@ -822,6 +822,20 @@ button.secondary:hover {
 .daily-theme-banner .dt-label { font-weight: 700; margin-right: 6px; }
 .daily-theme-banner .dt-sep { margin: 0 6px; opacity: 0.4; }
 .daily-theme-banner .dt-hours { color: rgba(255, 236, 139, 0.7); font-weight: 600; }
+.daily-play-btn {
+  margin-left: 8px;
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.6);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.daily-play-btn:hover { background: rgba(255, 215, 0, 0.4); }
 
 /* In-game timer (Speed mode) */
 #speed-timer {
