@@ -684,6 +684,93 @@ body {
   }
 }
 
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: rgba(207, 234, 255, 0.55);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 12px;
+  padding: 0;
+  font-family: inherit;
+}
+.link-btn:hover { color: #ff7799; }
+
+/* Phase 2 — mode selector + daily-theme banner on the start screen. */
+.mode-selector {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 280px;
+}
+.mode-selector .mode-title {
+  color: rgba(0, 212, 255, 0.7);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-align: left;
+}
+.mode-btn {
+  background: rgba(20, 20, 30, 0.7);
+  color: #cfeaff;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.mode-btn:hover { background: rgba(0, 212, 255, 0.12); }
+.mode-btn.selected {
+  background: rgba(0, 212, 255, 0.18);
+  border-color: rgba(0, 212, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.4) inset;
+}
+.mode-btn .mode-name { font-size: 14px; font-weight: 700; color: #00f0ff; }
+.mode-btn .mode-desc { font-size: 11px; color: rgba(207, 234, 255, 0.7); }
+.daily-theme-banner {
+  margin: 8px 0 16px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  font-size: 12px;
+  color: rgba(255, 236, 139, 0.9);
+}
+.daily-theme-banner.hidden { display: none; }
+.daily-theme-banner .dt-label { font-weight: 700; margin-right: 6px; }
+
+/* In-game timer (Speed mode) */
+#speed-timer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(20, 20, 30, 0.7);
+  color: #00f0ff;
+  border: 1px solid rgba(0, 212, 255, 0.6);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 5;
+  pointer-events: none;
+}
+#speed-timer.low { color: #ff0066; border-color: rgba(255, 0, 102, 0.8); }
+#speed-timer.hidden { display: none; }
+
+/* Game over screen extra block: personal best + stats */
+#game-over .stats-row { font-size: 12px; color: rgba(255,255,255,0.7); margin: 12px 0; line-height: 1.5; }
+#game-over .stats-row strong { color: #00f0ff; }
+
 /* Phase 1 — reduced-motion: respect users who request no animation. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

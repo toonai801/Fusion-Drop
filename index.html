@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Fusion Drop</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 <div id="game-wrapper">
@@ -32,6 +32,7 @@
 
   <!-- Game area (must be first in visual order on mobile via column-reverse) -->
   <div id="game-area">
+    <div id="speed-timer" class="hidden">90.0</div>
     <canvas id="game-canvas" width="400" height="600"></canvas>
     <div id="intro-screen" class="hidden">
       <div class="intro-content">
@@ -55,11 +56,33 @@
     <div id="start-screen" class="overlay hidden">
       <h1>FUSION DROP</h1>
       <input id="start-name" type="text" placeholder="Your name" maxlength="12">
+      <div id="mode-selector" class="mode-selector">
+        <div class="mode-title">Mode</div>
+        <button class="mode-btn selected" data-mode="classic" type="button">
+          <span class="mode-name">Classic</span>
+          <span class="mode-desc">Survive the death line.</span>
+        </button>
+        <button class="mode-btn" data-mode="zen" type="button">
+          <span class="mode-name">Zen</span>
+          <span class="mode-desc">No death line. Pure merges.</span>
+        </button>
+        <button class="mode-btn" data-mode="speed" type="button">
+          <span class="mode-name">Speed</span>
+          <span class="mode-desc">90-second time attack.</span>
+        </button>
+      </div>
+      <div id="daily-theme-banner" class="daily-theme-banner hidden">
+        <span class="dt-label">Today&rsquo;s theme:</span>
+        <span class="dt-name">&mdash;</span>
+      </div>
       <button id="btn-start">Start</button>
+      <button id="btn-reset-progress" class="link-btn" type="button">Reset progress</button>
     </div>
     <div id="game-over" class="overlay hidden">
       <h1>GAME OVER</h1>
       <div id="final-score">0</div>
+      <div id="game-over-stats" class="stats-row"></div>
+      <div id="game-over-pb" class="stats-row"></div>
       <button id="btn-save">Save Score</button>
       <button id="btn-play-again">Play Again</button>
     </div>
@@ -117,19 +140,26 @@ const backend = {
     return await r.json();
   },
   async saveScore(name, score, level) {
+    // Phase 2 — server requires drops + merges to recompute plausibility.
+    const drops = (window.game && window.game.dropsCount) || 0;
+    const merges = (window.game && window.game.mergesCount) || 0;
+    const mode = (window.game && window.game.mode) || 'classic';
     const r = await fetch('/api/scores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, score, level, date: Date.now() })
+      body: JSON.stringify({ name, score, level, drops, merges, mode, date: Date.now() })
     });
+    if (!r.ok) {
+      try { const body = await r.json(); console.warn('saveScore rejected:', body && body.error); } catch (_) {}
+    }
     return r.ok;
   }
 };
 </script>
-<script src="themes.js?v=15"></script>
-<script src="shapes.js?v=15"></script>
-<script src="physics.js?v=15"></script>
-<script src="sounds.js?v=15"></script>
-<script src="game.js?v=15"></script>
+<script src="themes.js?v=16"></script>
+<script src="shapes.js?v=16"></script>
+<script src="physics.js?v=16"></script>
+<script src="sounds.js?v=16"></script>
+<script src="game.js?v=16"></script>
 </body>
 </html>

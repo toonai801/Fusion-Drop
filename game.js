@@ -3,6 +3,28 @@ const CANVAS_H = 600;
 const DROP_LINE_Y = 90;
 const MAX_PREVIEW_TIER = 2;
 const GRACE_FRAMES = 180;
+
+// Phase 2 — game modes.
+//  'classic' = standard Suika: death line ends the run.
+//  'zen'     = no death line (no fail), target is max score.
+//  'speed'   = 90-second time attack; max score in 90 s.
+// GameMode is reflected on this.mode and persisted on pause/restart.
+const GAME_MODES = {
+  classic: { name: 'Classic', deathLine: true, timeAttack: false, targetSec: 0 },
+  zen:     { name: 'Zen',     deathLine: false, timeAttack: false, targetSec: 0 },
+  speed:   { name: 'Speed',   deathLine: true, timeAttack: true,  targetSec: 90 },
+};
+const DEFAULT_MODE = 'classic';
+
+// Phase 2 — milestone achievements. id -> { label, description }.
+const ACHIEVEMENTS = {
+  first_merge: { label: 'First Merge', description: 'Drop, collide, merge!' },
+  merges_10:   { label: 'Merger',      description: '10 merges in one run' },
+  merges_50:   { label: 'Fusion Master', description: '50 merges in one run' },
+  score_500:   { label: 'Half K',       description: 'Score 500' },
+  score_2000:  { label: 'Two Big',      description: 'Score 2000' },
+  first_max:   { label: 'Apex',         description: 'Spawn the largest tier' },
+};
 const DROP_DELAY = 30;
 
 class FusionGame {
@@ -28,6 +50,7 @@ class FusionGame {
     this.dropX = this.canvas.width / 2;
     this.dropTimer = 0;
     this.playerName = '';
+    this.mode = DEFAULT_MODE;
 
     // Explicit state machine
     this.state = 'intro';
@@ -52,6 +75,12 @@ class FusionGame {
 
     // Expose for debugging
     window.game = this;
+
+    // Phase 2 — engagement counters + achievement set.
+    this.timeLeft = 0;
+    this.dropsCount = 0;
+    this.mergesCount = 0;
+    this.achievements = new Set();
   }
 
   getShapes() { return getCurrentShapes(this.level); }
@@ -82,6 +111,67 @@ class FusionGame {
 
     // Reset transform and scale to fill
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  setMode(mode) {
+    if (!GAME_MODES[mode]) return;
+    this.mode = mode;
+    if (GAME_MODES[mode].timeAttack) {
+      this.timeLeft = GAME_MODES[mode].targetSec * 60;
+    } else {
+      this.timeLeft = 0;
+    }
+    if (typeof document !== 'undefined' && document.getElementById) {
+      const timerEl = document.getElementById('speed-timer');
+      if (timerEl) {
+        if (GAME_MODES[mode].timeAttack) timerEl.classList.remove('hidden');
+        else timerEl.classList.add('hidden');
+      }
+    }
+  }
+
+  bindModeButtons() {
+    if (typeof document === 'undefined' || !document.querySelectorAll) return;
+    const buttons = document.querySelectorAll('.mode-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        const m = btn.getAttribute('data-mode');
+        if (m) this.setMode(m);
+      });
+    });
+  }
+
+  getDailyThemeIndex() {
+    const days = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    return days % THEMES.length;
+  }
+
+  updateDailyThemeBanner() {
+    if (typeof document === 'undefined' || !document.getElementById) return;
+    const banner = document.getElementById('daily-theme-banner');
+    if (!banner || typeof banner.querySelector !== 'function') return;
+    const idx = this.getDailyThemeIndex();
+    const theme = THEMES[idx];
+    if (!theme) { banner.classList.add('hidden'); return; }
+    banner.classList.remove('hidden');
+    const nameEl = banner.querySelector('.dt-name');
+    if (nameEl) nameEl.textContent = theme.name + ' (#' + (idx + 1) + ')';
+  }
+
+  renderSpeedTimer() {
+    if (typeof document === 'undefined' || !document.getElementById) return;
+    const el = document.getElementById('speed-timer');
+    if (!el) return;
+    if (!(this.state === 'playing' && GAME_MODES[this.mode] && GAME_MODES[this.mode].timeAttack)) {
+      el.classList.add('hidden');
+      return;
+    }
+    el.classList.remove('hidden');
+    const seconds = Math.max(0, this.timeLeft / 60);
+    el.textContent = seconds.toFixed(1);
+    if (seconds <= 10) el.classList.add('low'); else el.classList.remove('low');
   }
 
   showIntroScreen() {
@@ -171,6 +261,21 @@ class FusionGame {
           content.classList.toggle('hidden');
           lbToggle.textContent = content.classList.contains('hidden') ? '🏆 Leaderboard ▼' : '🏆 Leaderboard ▲';
         }
+      });
+    }
+
+    if (typeof this.bindModeButtons === 'function') this.bindModeButtons();
+    if (typeof this.updateDailyThemeBanner === 'function') this.updateDailyThemeBanner();
+    const resetBtn = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('btn-reset-progress') : null;
+    if (resetBtn && resetBtn.addEventListener) {
+      resetBtn.addEventListener('click', () => {
+        Object.keys(GAME_MODES).forEach(m => {
+          try { localStorage.removeItem('fusion_drop_pb_' + m); } catch (_) {}
+        });
+        try { localStorage.removeItem('fusion_drop_paused'); } catch (_) {}
+        try { localStorage.removeItem('fusion_drop_scores'); } catch (_) {}
+        resetBtn.textContent = 'Progress reset';
+        setTimeout(() => { resetBtn.textContent = 'Reset progress'; }, 1500);
       });
     }
 
@@ -436,6 +541,7 @@ class FusionGame {
       }
     }
     this._dangerLevel = highestAbove === -Infinity ? 0 : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / 100));
+    this.renderSpeedTimer();
 
     // Wait for last dropped entity to land before allowing next drop
     // A dropped entity is the one still within its initial immune period
@@ -455,11 +561,25 @@ class FusionGame {
     for (const f of this.mergeFlashes) { f.life -= 0.05; f.radius += 2; }
     this.mergeFlashes = this.mergeFlashes.filter(f => f.life > 0);
 
+    // Phase 2 — achievement toast lifecycle. Show one at a time.
+    if (!this._achievementQueue) this._achievementQueue = [];
+    if (!this._activeToast) {
+      const next = this._achievementQueue.shift();
+      if (next) this._activeToast = { ...next, maxLife: 180 };  // ~3 s at 60 fps
+    }
+    if (this._activeToast) {
+      this._activeToast.life = (this._activeToast.life || 0) + 1;
+      if (this._activeToast.life >= this._activeToast.maxLife) {
+        this._activeToast = null;
+      }
+    }
+
     for (const p of this.ambientParticles) {
       p.y -= p.speed; p.x += Math.sin(p.time) * 0.5; p.time += 0.02;
       if (p.y < 0) { p.y = this.canvas.height + 10; p.x = Math.random() * this.canvas.width; }
     }
   }
+
 
   draw() {
     const ctx = this.ctx;
@@ -564,6 +684,35 @@ class FusionGame {
       ctx.fillText('+' + p.score, p.x, p.y); ctx.restore();
     }
 
+    // Phase 2 — achievement toast banner.
+    if (this._activeToast) {
+      const a = this._activeToast;
+      const fadeIn = Math.min(1, a.life / 12);
+      const fadeOut = Math.max(0, 1 - (a.life - (a.maxLife - 30)) / 30);
+      const alpha = Math.min(fadeIn, fadeOut);
+      if (alpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const w = 240, h = 56;
+        const cx = (this.canvas.width - w) / 2;
+        const cy = 18;
+        ctx.fillStyle = 'rgba(20, 20, 30, 0.85)';
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(cx, cy, w, h, 8);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('★ ' + a.label, this.canvas.width / 2, cy + 22);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText(a.description, this.canvas.width / 2, cy + 40);
+        ctx.restore();
+      }
+    }
+
     // Next preview (mobile)
     const previewShapes = this.getShapes();
     if (this.nextCtx) {
@@ -595,6 +744,36 @@ class FusionGame {
 
   addMergeFlash(x, y) {
     this.mergeFlashes.push({ x, y, radius: 10, life: 1.0, color: '#ffffff' });
+  }
+
+  // Phase 2 — achievement toast queue. Each toast renders for ~3 s, then fades.
+  // One toast visible at a time; queue holds the rest.
+  addAchievementToast(label, description) {
+    if (!this._achievementQueue) this._achievementQueue = [];
+    this._achievementQueue.push({ label, description, t: 0 });
+  }
+
+  // Phase 2 — milestone checks; called after every merge.
+  // Grants at most one achievement per call (so a multi-merge only fires one at a time).
+  checkAchievements() {
+    if (!this.achievements) return;
+    const tryGrant = (id, fn) => {
+      if (this.achievements.has(id)) return;
+      if (fn()) {
+        this.achievements.add(id);
+        const def = ACHIEVEMENTS[id];
+        if (def) this.addAchievementToast(def.label, def.description);
+      }
+    };
+    tryGrant('first_merge', () => this.mergesCount >= 1);
+    tryGrant('merges_10',   () => this.mergesCount >= 10);
+    tryGrant('merges_50',   () => this.mergesCount >= 50);
+    tryGrant('score_500',   () => this.score >= 500);
+    tryGrant('score_2000',  () => this.score >= 2000);
+    tryGrant('first_max',   () => {
+      const shapes = this.getShapes();
+      return this.entities.some(e => e.active && e.shapeType === shapes.length - 1);
+    });
   }
 
   triggerScreenShake() {
@@ -703,9 +882,33 @@ class FusionGame {
   endGame() {
     this.state = 'game-over';
     this.sounds.stopAmbient();
+    this.sounds.stopWarning();
     this.sounds.playGameOver();
-    document.getElementById('final-score').textContent = this.score;
-    document.getElementById('game-over').classList.remove('hidden');
+    const finalEl = document.getElementById('final-score');
+    if (finalEl) finalEl.textContent = this.score;
+    // Phase 2 — end-of-run stats and personal best.
+    const statsEl = document.getElementById('game-over-stats');
+    if (statsEl) {
+      const perDrop = this.dropsCount > 0 ? (this.score / this.dropsCount).toFixed(1) : '0';
+      const modeName = (GAME_MODES[this.mode] && GAME_MODES[this.mode].name) || this.mode;
+      statsEl.innerHTML =
+        '<div>Mode: <strong>' + modeName + '</strong></div>' +
+        '<div>Drops: <strong>' + this.dropsCount + '</strong> &nbsp; Merges: <strong>' + this.mergesCount + '</strong></div>' +
+        '<div>Score/Drop: <strong>' + perDrop + '</strong> &nbsp; Achievements: <strong>' + this.achievements.size + '</strong></div>';
+    }
+    const pbEl = document.getElementById('game-over-pb');
+    if (pbEl) {
+      const key = 'fusion_drop_pb_' + this.mode;
+      const prev = parseInt(localStorage.getItem(key) || '0', 10) || 0;
+      if (this.score > prev) {
+        try { localStorage.setItem(key, String(this.score)); } catch (_) {}
+        pbEl.innerHTML = '<div>🏆 New personal best for <strong>' + ((GAME_MODES[this.mode]||{}).name||this.mode) + '</strong>!</div>';
+      } else if (prev > 0) {
+        pbEl.innerHTML = '<div>Personal best: <strong>' + prev + '</strong></div>';
+      }
+    }
+    const goEl = document.getElementById('game-over');
+    if (goEl) goEl.classList.remove('hidden');
     this.disableCanvas();
   }
 

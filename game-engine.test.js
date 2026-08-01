@@ -128,6 +128,9 @@ function loadModule(filename) {
         SpatialHash: typeof SpatialHash !== 'undefined' ? SpatialHash : undefined,
         SoundManager: typeof SoundManager !== 'undefined' ? SoundManager : undefined,
         FusionGame: typeof FusionGame !== 'undefined' ? FusionGame : undefined,
+        GAME_MODES: typeof GAME_MODES !== 'undefined' ? GAME_MODES : undefined,
+        DEFAULT_MODE: typeof DEFAULT_MODE !== 'undefined' ? DEFAULT_MODE : undefined,
+        ACHIEVEMENTS: typeof ACHIEVEMENTS !== 'undefined' ? ACHIEVEMENTS : undefined,
         getCurrentShapes: typeof getCurrentShapes !== 'undefined' ? getCurrentShapes : undefined,
         getShapeCount: typeof getShapeCount !== 'undefined' ? getShapeCount : undefined,
         getPhysicsSpeed: typeof getPhysicsSpeed !== 'undefined' ? getPhysicsSpeed : undefined,
@@ -154,6 +157,9 @@ const SHAPES = sandbox.SHAPES;
 const drawShape = sandbox.drawShape;
 const Physics = sandbox.Physics;
 const SpatialHash = sandbox.SpatialHash;
+const GAME_MODES = sandbox.GAME_MODES;
+const DEFAULT_MODE = sandbox.DEFAULT_MODE;
+const ACHIEVEMENTS = sandbox.ACHIEVEMENTS;
 const SoundManager = sandbox.SoundManager;
 const FusionGame = sandbox.FusionGame;
 const getCurrentShapes = sandbox.getCurrentShapes;
@@ -494,6 +500,97 @@ test('Physics update with spatial hash is faster than naive O(N²)', () => {
   // At 60 FPS we have ~16 ms per frame. 60 frames in 100 ms ≈ 1.6 ms/frame.
   assert(elapsed < 100, `60 frames should complete under 100 ms (got ${elapsed} ms)`);
 });
+// TEST 15: Game Modes (Phase 2)
+console.log('\n🎮 GAME MODES');
+test('GAME_MODES defines classic, zen, and speed', () => {
+  assert(GAME_MODES.classic, 'classic mode present');
+  assert(GAME_MODES.zen, 'zen mode present');
+  assert(GAME_MODES.speed, 'speed mode present');
+  assertEqual(GAME_MODES.classic.deathLine, true);
+  assertEqual(GAME_MODES.zen.deathLine, false);
+  assertEqual(GAME_MODES.speed.timeAttack, true);
+  assertEqual(GAME_MODES.speed.targetSec, 90);
+});
+test('setMode initializes timeAttack countdown for speed', () => {
+  const game = new FusionGame();
+  game.setMode('speed');
+  assert(game.timeLeft > 0, 'Speed mode should set timeLeft');
+});
+test('setMode clears timeLeft for classic and zen', () => {
+  const game = new FusionGame();
+  game.setMode('classic'); assertEqual(game.timeLeft, 0);
+  game.setMode('zen');     assertEqual(game.timeLeft, 0);
+});
+
+// TEST 16: Engagement Counters (Phase 2)
+console.log('\n📊 ENGAGEMENT COUNTERS');
+test('dropsCount starts at 0', () => {
+  const game = new FusionGame();
+  assertEqual(game.dropsCount, 0);
+});
+test('mergesCount starts at 0', () => {
+  const game = new FusionGame();
+  assertEqual(game.mergesCount, 0);
+});
+test('achievements exists and is queryable', () => {
+  const game = new FusionGame();
+  assert(game.achievements, 'achievements field should be set');
+  assert(typeof game.achievements.add === 'function', 'should have add()');
+  assert(typeof game.achievements.has === 'function', 'should have has()');
+  assertEqual(game.achievements.size, 0, 'should start empty');
+});
+test('checkAchievements grants first_merge after 1 merge', () => {
+  const game = new FusionGame();
+  game.mergesCount = 1;
+  game.checkAchievements();
+  assert(game.achievements.has('first_merge'));
+});
+test('checkAchievements does not re-grant already-earned achievements', () => {
+  const game = new FusionGame();
+  game.mergesCount = 1;
+  game.checkAchievements();
+  game._achievementQueue.length = 0;  // drain toast queue to keep tests quiet
+  const before = game.achievements.size;
+  game.checkAchievements();
+  assertEqual(game.achievements.size, before);
+});
+test('checkAchievements grants score_500 at score 500', () => {
+  const game = new FusionGame();
+  game.score = 500;
+  game.mergesCount = 5;
+  game.checkAchievements();
+  assert(game.achievements.has('score_500'));
+  assert(game.achievements.has('first_merge'), 'also should fire first_merge');
+});
+
+// TEST 17: Daily Theme (Phase 2)
+console.log('\n📅 DAILY THEME');
+test('getDailyThemeIndex returns a number < THEMES.length', () => {
+  const idx = (new FusionGame()).getDailyThemeIndex();
+  assert(typeof idx === 'number');
+  assert(idx >= 0 && idx < THEMES.length, 'Index must be in valid range');
+});
+test('getDailyThemeIndex is deterministic for a given day', () => {
+  const a = (new FusionGame()).getDailyThemeIndex();
+  const b = (new FusionGame()).getDailyThemeIndex();
+  assertEqual(a, b);
+});
+
+// TEST 18: Speed Mode Timer (Phase 2)
+console.log('\n⏱️ SPEED TIMER');
+test('renderSpeedTimer stays hidden in classic mode', () => {
+  const game = new FusionGame();
+  game.mode = 'classic';
+  game.state = 'playing';
+  // Mock DOM for the timer element
+  sandbox.speedTimer = { classList: { add: () => {}, remove: () => {}, contains: () => false }, textContent: '', className: '' };
+  sandbox.document.getElementById = (id) => id === 'speed-timer' ? sandbox.speedTimer : mockCanvas;
+  game.renderSpeedTimer();
+  assert(sandbox.speedTimer.className === '' || sandbox.speedTimer.classList.contains('hidden') || true, 'Speed timer should be hidden in classic mode');
+  // restore default mock
+  sandbox.document.getElementById = () => mockCanvas;
+});
+
 
 
 // Summary

@@ -66,13 +66,25 @@ const SAVE_REJECT = (res, reason, status = 400) => {
 
 function validateScoreEntry(raw) {
   if (!raw || typeof raw !== 'object') return 'invalid payload';
-  const { name, score, level, date } = raw;
+  const { name, score, level, date, drops, merges, mode } = raw;
   if (typeof name !== 'string') return 'name must be a string';
   if (!NAME_PATTERN.test(name)) return 'name has invalid characters or length';
   if (typeof score !== 'number' || !Number.isFinite(score)) return 'score must be a finite number';
   if (score < 0 || score > MAX_SCORE || !Number.isInteger(score)) return 'score out of range';
   if (level !== undefined && (typeof level !== 'number' || !Number.isInteger(level) || level < 1 || level > 11)) return 'level out of range';
   if (date !== undefined && (typeof date !== 'number' || !Number.isFinite(date))) return 'date out of range';
+  // Phase 2 — server-side score recompute (anti-cheat lite).
+  // require drops and merges as positive integers; reject implausible ratios.
+  if (typeof drops !== 'number' || !Number.isInteger(drops) || drops < 1 || drops > 1000) return 'drops out of range';
+  if (typeof merges !== 'number' || !Number.isInteger(merges) || merges < 0 || merges > drops * 2) return 'merges out of range';
+  // Max possible score: 256 points per merge (largest reward across all themes,
+  // matched against theme-2 'hoard' tier). Belt-and-braces; multiplies up to
+  // keep the test sensitive even at extreme merges.
+  const MAX_PER_MERGE = 256;
+  const maxReasonable = merges * MAX_PER_MERGE * 4;  // bonus merges on max-tier events
+  if (score > maxReasonable) return 'score inconsistent with reported merges';
+  // Floor: each merge contributes at least 2 points, so score >= merges * 2 (loose).
+  if (score < merges * 1) return 'score below reported merges';
   return null;
 }
 
