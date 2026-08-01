@@ -741,6 +741,26 @@ test('getDailyThemeHoursRemaining returns a value between 0 and 24', () => {
   assert(hrs > 0 && hrs <= 24, 'should be 0 < hrs <= 24, got ' + hrs);
 });
 test('Two calls return similar values (within 1 hour)', () => {
+// TEST 27: Restart resets per-run counters.
+console.log('\n🔄 RESTART COUNTERS');
+test('restart() resets dropsCount, mergesCount, achievements', () => {
+  const game = new FusionGame();
+  game.state = 'playing';
+  game.playerName = 'T';
+  game.dropsCount = 5;
+  game.mergesCount = 3;
+  game.achievements.add('first_merge');
+  game.achievements.add('score_500');
+  game._achievementQueue = [{ label: 'X', description: 'Y' }];
+  game._activeToast = { label: 'X', description: 'Y' };
+  game.restart();
+  assertEqual(game.dropsCount, 0);
+  assertEqual(game.mergesCount, 0);
+  assertEqual(game.achievements.size, 0);
+  assertEqual(game._achievementQueue.length, 0);
+  assertEqual(game._activeToast, null);
+});
+
   const game = new FusionGame();
   const a = game.getDailyThemeHoursRemaining();
   const b = game.getDailyThemeHoursRemaining();

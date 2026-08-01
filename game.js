@@ -1133,6 +1133,14 @@ class FusionGame {
     this.dropTimer = 0;
     this.frameCount = 0;
     this.playerName = '';
+    // Reset per-run counters so a fresh game shows zeros on the
+    // end-game stats screen.
+    this.dropsCount = 0;
+    this.mergesCount = 0;
+    this.achievements = new Set();
+    this._achievementQueue = [];
+    this._activeToast = null;
+    this.timeLeft = 0;
 
     this.state = 'intro';
 
