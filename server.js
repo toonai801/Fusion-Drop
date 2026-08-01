@@ -185,7 +185,21 @@ const server = http.createServer((req, res) => {
       const scores = loadScores();
       scores.push(sanitized);
       scores.sort((a, b) => b.score - a.score);
-      saveScores(scores.slice(0, 50));
+      // Keep top 50 by score, but never drop a *new* (most recent) entry
+      // even if its score is low. This prevents a 1-drop, 0-merge run
+      // from being silently culled.
+      const MAX = 50;
+      let toSave;
+      if (scores.length <= MAX) {
+        toSave = scores;
+      } else {
+        const older = scores.slice(0, -1);
+        const newer = scores[scores.length - 1];
+        older.sort((a, b) => b.score - a.score);
+        toSave = older.slice(0, MAX - 1).concat([newer]);
+        toSave.sort((a, b) => b.score - a.score);
+      }
+      saveScores(toSave);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true }));
     });
