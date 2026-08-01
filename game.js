@@ -604,6 +604,15 @@ class FusionGame {
       this.dropTimer = 0;
     }
 
+    // Phase 2 — Speed mode time-attack countdown.
+    if (this.state === 'playing' && GAME_MODES[this.mode] && GAME_MODES[this.mode].timeAttack) {
+      this.timeLeft--;
+      if (this.timeLeft <= 0) {
+        this.endGame();
+        return;
+      }
+    }
+
     // Update particles
     for (const p of this.mergeParticles) { p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= 0.04; }
     this.mergeParticles = this.mergeParticles.filter(p => p.life > 0);

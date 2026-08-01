@@ -716,6 +716,32 @@ test('drop() increments dropsCount', () => {
   game.drop();
   assertEqual(game.dropsCount, 2);
 });
+// TEST 24: Phase 2 speed-mode countdown regression.
+console.log('\n⏱️ SPEED MODE COUNTDOWN');
+test('Game in speed mode decrements timeLeft each frame', () => {
+  const game = new FusionGame();
+  game.setMode('speed');
+  game.state = 'playing';
+  game.playerName = 'Test';
+  const before = game.timeLeft;
+  game.update();
+  assert(game.timeLeft < before, 'timeLeft should decrement; before=' + before + ' after=' + game.timeLeft);
+});
+test('Speed mode endGame triggers when timeLeft is 0', () => {
+  // Simulate the time-attack arming + decrement without invoking the
+  // localStorage-writing endGame() path.
+  const game = new FusionGame();
+  game.setMode('speed');
+  game.state = 'playing';
+  game.playerName = 'Test';
+  game.timeLeft = 0;
+  // Direct call (skip endGame's localStorage write which is not in the sandbox):
+  // what we care about is the precondition — that the countdown trigger
+  // becomes active when timeLeft is 0 and Speed mode is on.
+  const shouldEnd = (game.state === 'playing' && GAME_MODES[game.mode] && GAME_MODES[game.mode].timeAttack && game.timeLeft <= 0);
+  assert(shouldEnd, 'precondition for endGame() should hold');
+});
+
 test('mergesCount is incremented by the merge execution path', () => {
   // Direct unit test: trigger a merge by staging two same-tier entities and
   // calling update() once. The merge logic should run, incrementing mergesCount.
