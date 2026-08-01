@@ -311,6 +311,8 @@ class FusionGame {
     document.getElementById('btn-save').addEventListener('click', () => this.saveScore());
     document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
+    const btnRestartPause = document.getElementById('btn-restart-from-pause');
+    if (btnRestartPause) btnRestartPause.addEventListener('click', () => this.restart());
 
     const lbToggle = document.getElementById('lb-toggle');
     if (lbToggle) {

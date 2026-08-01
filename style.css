@@ -708,6 +708,19 @@ body {
 }
 .link-btn:hover { color: #ff7799; }
 
+/* Phase B polish-5: secondary button styling (used on pause overlay
+   for the Restart option). */
+button.secondary {
+  background: transparent;
+  color: rgba(207, 234, 255, 0.85);
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  margin-top: 8px;
+}
+button.secondary:hover {
+  background: rgba(255, 0, 102, 0.1);
+  border-color: rgba(255, 0, 102, 0.6);
+}
+
 /* Phase B polish-3: bigger tap target for the start-screen Start button
    and a uniform overlay button style. */
 .overlay button, .overlay .btn {
