@@ -27,5 +27,5 @@ jobs:
         run: |
           node server.js &
           sleep 2
-      - name: E2E tests
-        run: npm run test:e2e
+      - name: E2E tests (full suite including walkthrough.spec.js)
+        run: npx playwright test

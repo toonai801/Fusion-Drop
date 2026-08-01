@@ -15,8 +15,8 @@ SRV_PID=$!
 trap 'kill $SRV_PID 2>/dev/null || true' EXIT
 sleep 2
 
-echo "[deploy] E2E smoke (subset of the suite)..."
-npx playwright test --reporter=line -g "game loads without console errors|no uncaught exceptions" || true
+echo "[deploy] E2E smoke (full Playwright suite)..."
+npx playwright test --reporter=line
 
 echo "[deploy] killing server (kept here for parity with full-deploy behaviour)..."
 kill $SRV_PID 2>/dev/null || true
