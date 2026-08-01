@@ -59,35 +59,51 @@ class SoundManager {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
 
-    const baseFreq = 440 + (tier * 110); // Higher tiers = higher pitch
+    // Phase 5 — theme-driven timbre. Each theme maps to a (waveform,
+    // base offset) so merging 'prism' in Fusion sounds different from
+    // merging 'prism' in Wizard. Theme index can be set externally via
+    // this.themeIndex; defaults to 0 (Fusion).
+    const THEME_TIMBRES = [
+      { wave: 'triangle',  harm: 'sine',     base: 440, decay: 0.30 },
+      { wave: 'square',    harm: 'triangle', base: 523, decay: 0.32 },
+      { wave: 'sawtooth',  harm: 'triangle', base: 392, decay: 0.28 },
+      { wave: 'triangle',  harm: 'sine',     base: 466, decay: 0.36 },
+      { wave: 'sine',      harm: 'triangle', base: 587, decay: 0.34 },
+      { wave: 'triangle',  harm: 'sine',     base: 349, decay: 0.32 },
+      { wave: 'square',    harm: 'sine',     base: 659, decay: 0.30 },
+      { wave: 'triangle',  harm: 'square',   base: 415, decay: 0.35 },
+      { wave: 'sawtooth',  harm: 'square',   base: 311, decay: 0.40 },
+      { wave: 'triangle',  harm: 'sine',     base: 698, decay: 0.30 },
+      { wave: 'sine',      harm: 'triangle', base: 247, decay: 0.45 },
+    ];
+    const timbre = THEME_TIMBRES[Math.min(this.themeIndex || 0, THEME_TIMBRES.length - 1)];
+    const baseFreq = timbre.base + (tier * 110);
+
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-    
-    osc.type = 'triangle';
+    osc.type = timbre.wave;
     osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, this.ctx.currentTime + 0.2);
-    
     gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-    
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + timbre.decay);
     osc.connect(gain);
     gain.connect(this.masterGain);
-    
     osc.start(this.ctx.currentTime);
-    osc.stop(this.ctx.currentTime + 0.3);
+    osc.stop(this.ctx.currentTime + timbre.decay);
 
-    // Second harmonic
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
-    osc2.type = 'sine';
+    osc2.type = timbre.harm;
     osc2.frequency.setValueAtTime(baseFreq * 2, this.ctx.currentTime);
     gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
-    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + timbre.decay * 0.85);
     osc2.connect(gain2);
     gain2.connect(this.masterGain);
     osc2.start(this.ctx.currentTime);
-    osc2.stop(this.ctx.currentTime + 0.25);
+    osc2.stop(this.ctx.currentTime + timbre.decay * 0.85);
   }
+
+  setThemeIndex(idx) { this.themeIndex = idx; }
 
   // Level complete chord
   playLevelComplete() {

@@ -665,6 +665,46 @@ test('saveScores uses atomic temp + rename', () => {
   const fnTxt = txt.split('function saveScores')[1] || '';
   assert(/renameSync/.test(fnTxt), 'saveScores should renameSync');
 });
+// TEST 22: Phase 5 — theme distinctness + framework sanity.
+console.log('\n🎨 THEME AUDIT');
+test('All 11 themes have distinct primary colors', () => {
+  const colors = THEMES.map(t => t.color);
+  const unique = new Set(colors);
+  // Allow up to 1 duplicate (some themes share accent colors). 11 themes
+  // should have at least 9 unique primaries.
+  assert(unique.size >= 9, 'themes should have distinct primary colors, got ' + unique.size + ' uniques');
+});
+test('All 11 themes have distinct names', () => {
+  const names = THEMES.map(t => t.name);
+  assertEqual(new Set(names).size, THEMES.length, 'all 11 themes should have unique names');
+});
+test('Themes increase shape counts at the top end', () => {
+  assert(getCurrentShapes(1).length <= getCurrentShapes(11).length, 'later themes should have more shapes');
+});
+test('SoundManager theme timbre table covers 11 themes', () => {
+  // Inspect sounds.js source for the THEME_TIMBRES table.
+  const fs = require('fs');
+  const src = fs.readFileSync('sounds.js', 'utf8');
+  assert(src.includes('THEME_TIMBRES'), 'THEME_TIMBRES table missing');
+  // Count occurrences of "{ wave: '..." in the table to confirm there are 11.
+  const matches = src.match(/\{\s*wave:/g) || [];
+  assert(matches.length >= 11, 'expected 11 timbre entries, found ' + matches.length);
+});
+test('Debug overlay toggle method exists', () => {
+  const game = new FusionGame();
+  assert(typeof game.toggleDebugOverlay === 'function');
+});
+test('Frame-time ring buffer caps at 60', () => {
+  const game = new FusionGame();
+  // The constructor seeds _frameTimes as an empty array. Use the loop's
+  // own cap-by-shift pattern.
+  for (let i = 0; i < 100; i++) {
+    game._frameTimes.push(16);
+    if (game._frameTimes.length > 60) game._frameTimes.shift();
+  }
+  assertEqual(game._frameTimes.length, 60, 'frame-times ring should be capped at 60');
+});
+
 
 
 

@@ -61,6 +61,10 @@ class FusionGame {
     this.mergeFlashes = [];
     this.leaderboard = [];
     this.sounds = new SoundManager();
+    // Phase 5 — frame-time history (last 60 frames) and a debug overlay.
+    this._frameTimes = [];
+    this._lastFrameTs = 0;
+    this._debugOverlay = false;
     this.frameCount = 0;
 
     this.renderShapeChain();
@@ -201,6 +205,23 @@ class FusionGame {
     if (seconds <= 10) el.classList.add('low'); else el.classList.remove('low');
   }
 
+  // Phase 5 — show one-time onboarding overlay. Skippable; remembers it was dismissed.
+  showOnboardingIfNeeded() {
+    if (typeof window === 'undefined') return;
+    try {
+      const dismissed = localStorage.getItem('fusion_drop_onboarded') === 'true';
+      if (dismissed) return;
+    } catch (_) { return; }
+    const el = document.getElementById('onboarding-overlay');
+    const btn = document.getElementById('btn-onboarding-dismiss');
+    if (!el || !btn) return;
+    el.classList.remove('hidden');
+    btn.addEventListener('click', () => {
+      el.classList.add('hidden');
+      try { localStorage.setItem('fusion_drop_onboarded', 'true'); } catch (_) {}
+    }, { once: true });
+  }
+
   showIntroScreen() {
     this.state = 'intro';
     const intro = document.getElementById('intro-screen');
@@ -215,6 +236,7 @@ class FusionGame {
   }
 
   showStartScreen() {
+    this.showOnboardingIfNeeded();
     this.state = 'name-entry';
     document.getElementById('start-screen').classList.remove('hidden');
     this.disableCanvas();
@@ -307,6 +329,7 @@ class FusionGame {
     }
 
     document.addEventListener('keydown', (e) => {
+      if (e.code === 'Backquote') { e.preventDefault(); this.toggleDebugOverlay(); }
       if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.drop(); }
       if (e.code === 'Escape') this.togglePause();
       // Phase 1 — keyboard aim (Left/Right or A/D)
@@ -413,6 +436,9 @@ class FusionGame {
     const oldLevel = this.level;
     this.level++;
     this.currentTheme = THEMES[Math.min(this.level - 1, THEMES.length - 1)];
+    if (this.sounds && typeof this.sounds.setThemeIndex === 'function') {
+      this.sounds.setThemeIndex(this.level - 1);
+    }
     for (const e of this.entities) {
       if (!e.active) continue;
       const transformed = transformEntityToTheme(e, oldLevel, this.level);
@@ -711,6 +737,27 @@ class FusionGame {
       ctx.fillText('+' + p.score, p.x, p.y); ctx.restore();
     }
 
+    // Phase 5 — debug overlay text.
+    if (this._debugOverlay) {
+      const panel = document.getElementById('debug-overlay');
+      if (panel) {
+        const times = this._frameTimes;
+        let avg = 0, pMax = 0;
+        for (const t of times) { avg += t; if (t > pMax) pMax = t; }
+        if (times.length > 0) avg /= times.length;
+        const fps = avg > 0 ? (1000 / avg).toFixed(0) : '---';
+        const entityCount = (this.entities || []).filter(e => e.active).length;
+        const themeName = (this.currentTheme && this.currentTheme.name) || '?';
+        panel.textContent =
+          'fps: ' + fps + ' (' + avg.toFixed(1) + 'ms)\n' +
+          'pMax: ' + pMax.toFixed(1) + 'ms\n' +
+          'ents: ' + entityCount + '\n' +
+          'theme: ' + themeName + ' (#' + this.level + ')\n' +
+          'mode: ' + this.mode + '\n' +
+          'score: ' + this.score;
+      }
+    }
+
     // Phase 2 — achievement toast banner.
     if (this._activeToast) {
       const a = this._activeToast;
@@ -813,10 +860,34 @@ class FusionGame {
   }
 
   loop() {
+    // Phase 5 — frame-time histogram. Guarded for unit-test sandboxes that
+    // may not expose `performance`.
+    if (typeof performance !== 'undefined') {
+      const now = performance.now();
+      if (this._lastFrameTs) {
+        const dt = now - this._lastFrameTs;
+        this._frameTimes.push(dt);
+        if (this._frameTimes.length > 60) this._frameTimes.shift();
+      }
+      this._lastFrameTs = now;
+    }
     this.frameCount++;
     this.update();
     this.draw();
     requestAnimationFrame(() => this.loop());
+  }
+
+  // Phase 5 — toggle the `~`-bound debug overlay (fps + entity count + theme).
+  toggleDebugOverlay() {
+    this._debugOverlay = !this._debugOverlay;
+    let panel = document.getElementById('debug-overlay');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'debug-overlay';
+      panel.style.cssText = 'position:fixed;bottom:8px;left:8px;z-index:99;background:rgba(20,20,30,0.85);color:#00f0ff;border:1px solid rgba(0,212,255,0.4);border-radius:6px;padding:6px 10px;font:11px/1.4 monospace;pointer-events:none;min-width:160px;';
+      document.body.appendChild(panel);
+    }
+    panel.style.display = this._debugOverlay ? 'block' : 'none';
   }
 
   updateScoreDisplay() {
