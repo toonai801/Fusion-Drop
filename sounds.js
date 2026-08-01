@@ -28,8 +28,11 @@ class SoundManager {
     const gain = this.ctx.createGain();
     
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440, this.ctx.currentTime + 0.15);
+    // Phase B polish-21: randomize drop pitch by +/- 5% so successive
+    // drops don't sound mechanical.
+    const pitchOffset = 1 + ((Math.random() - 0.5) * 0.1);
+    osc.frequency.setValueAtTime(880 * pitchOffset, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440 * pitchOffset, this.ctx.currentTime + 0.15);
     
     gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
