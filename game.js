@@ -222,6 +222,27 @@ class FusionGame {
     try { localStorage.setItem('fusion_drop_sound', enabled ? '1' : '0'); } catch (_) {}
   }
 
+  // Phase B polish-18: today's best score from server-side leaderboard.
+  async updateBestTodayBanner() {
+    if (typeof document === 'undefined' || !document.getElementById) return;
+    const banner = document.getElementById('best-today-banner');
+    const scoreEl = banner ? banner.querySelector('.bt-score') : null;
+    if (!banner || !scoreEl) return;
+    try {
+      const resp = await fetch('/api/scores');
+      if (!resp.ok) { banner.classList.add('hidden'); return; }
+      const scores = await resp.json();
+      const todayStart = Math.floor(new Date().setHours(0,0,0,0) / 1000) * 1000;
+      const todayScores = scores.filter(s => (s.date || 0) >= todayStart);
+      if (todayScores.length === 0) { banner.classList.add('hidden'); return; }
+      const top = todayScores.reduce((a, b) => (b.score > a.score ? b : a));
+      banner.classList.remove('hidden');
+      scoreEl.textContent = top.score + ' by ' + top.name;
+    } catch (_) {
+      banner.classList.add('hidden');
+    }
+  }
+
   // Phase 3 — deterministic name flair. Same name = same color across sessions.
   colorForName(name) {
     if (!name) return 'rgba(207, 234, 255, 0.85)';
@@ -264,6 +285,7 @@ class FusionGame {
 
   showIntroScreen() {
     this.state = 'intro';
+    if (typeof this.updateBestTodayBanner === 'function') this.updateBestTodayBanner();
     const intro = document.getElementById('intro-screen');
     const btnStart = document.getElementById('btn-intro-start');
     intro.classList.remove('hidden');

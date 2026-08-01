@@ -36,15 +36,16 @@ test.describe('Fusion Drop full walkthrough (smoke)', () => {
     expect(cv.w).toBe(400);
     expect(cv.h).toBe(600);
 
-    // Drop 8 shapes
+    // Drop 8 shapes — alternate at two positions to force at least one merge.
     for (let i = 0; i < 8; i++) {
-      await page.evaluate(() => {
+      await page.evaluate((i) => {
         const cv = window.game.canvas;
         const rect = cv.getBoundingClientRect();
-        const x = rect.left + 100 + Math.random() * 200;
+        // Alternate x positions: 1st, 3rd, 5th, 7th at x=150; 2nd, 4th, 6th, 8th at x=250.
+        const x = rect.left + (i % 2 === 0 ? 150 : 250);
         const evt = new MouseEvent('click', { clientX: x, clientY: rect.top + 30, bubbles: true });
         cv.dispatchEvent(evt);
-      });
+      }, i);
       await page.waitForTimeout(400);
     }
     const drops = await page.evaluate(() => window.game.dropsCount);
