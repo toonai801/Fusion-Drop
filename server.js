@@ -34,8 +34,48 @@ const MAX_BODY_BYTES = 1024;          // Reject POSTs > 1 KB
 const MAX_SCORE = 99999;             // Sanity cap on leaderboard entries
 const MAX_NAME_LENGTH = 20;          // Prevent name-spam and XSS surface
 const NAME_PATTERN = /^[A-Za-z0-9 _\-\.\u00C0-\u017F]{1,20}$/;  // Letters, digits, space, _ - .
-const SAVE_REJECT = (res, reason) => {
-  res.writeHead(400, { 'Content-Type': 'application/json' });
+
+// Rate limit: 30 POSTs per minute per IP (token bucket, 30 capacity, 0.5/s refill)
+const RATE_CAPACITY = 30;
+const RATE_REFILL_PER_MS = 1 / 2000;  // 30 per minute = 0.5 per second
+
+const rateBuckets = new Map();  // ip -> { tokens, lastRefill }
+
+function rateLimit(ip) {
+  const now = Date.now();
+  let bucket = rateBuckets.get(ip);
+  if (!bucket) {
+    bucket = { tokens: RATE_CAPACITY, lastRefill: now };
+    rateBuckets.set(ip, bucket);
+  } else {
+    const elapsed = now - bucket.lastRefill;
+    bucket.tokens = Math.min(RATE_CAPACITY, bucket.tokens + elapsed * RATE_REFILL_PER_MS);
+    bucket.lastRefill = now;
+  }
+  if (bucket.tokens < 1) return false;
+  bucket.tokens -= 1;
+  return true;
+}
+
+// Cleanup stale rate buckets every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of rateBuckets.entries()) {
+    if (now - bucket.lastRefill > 5 * 60 * 1000) rateBuckets.delete(ip);
+  }
+}, 5 * 60 * 1000).unref();
+
+function getClientIp(req) {
+  // Honor X-Forwarded-For when present (Tailscale / reverse proxy). Otherwise socket address.
+  const xff = req.headers['x-forwarded-for'];
+  if (typeof xff === 'string' && xff.length > 0) {
+    return xff.split(',')[0].trim();
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
+
+const SAVE_REJECT = (res, reason, status = 400) => {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ success: false, error: reason }));
 };
 
@@ -89,6 +129,8 @@ const server = http.createServer((req, res) => {
 
   // POST /api/scores - save finished game score
   if (pathname === '/api/scores' && req.method === 'POST') {
+    const ip = getClientIp(req);
+    if (!rateLimit(ip)) return SAVE_REJECT(res, 'rate limit exceeded', 429);
     let body = '';
     let aborted = false;
     req.on('data', chunk => {
@@ -127,6 +169,8 @@ const server = http.createServer((req, res) => {
 
   // POST /api/active - heartbeat from playing player
   if (pathname === '/api/active' && req.method === 'POST') {
+    const ip = getClientIp(req);
+    if (!rateLimit(ip)) return SAVE_REJECT(res, 'rate limit exceeded', 429);
     let body = '';
     let aborted = false;
     req.on('data', chunk => {
@@ -145,12 +189,14 @@ const server = http.createServer((req, res) => {
       const err = validateActiveUpdate(update);
       if (err) return SAVE_REJECT(res, err);
       let active = loadActive();
-      const existing = active.find(p => p.name === update.name);
+      // Dedup by IP — one entry per source, not per name.
+      const existing = active.find(p => p.ip === ip);
       if (existing) {
+        existing.name = update.name;
         existing.score = update.score;
         existing.lastSeen = Date.now();
       } else {
-        active.push({ name: update.name, score: update.score, lastSeen: Date.now() });
+        active.push({ ip, name: update.name, score: update.score, lastSeen: Date.now() });
       }
       saveActive(active);
       res.writeHead(200, { 'Content-Type': 'application/json' });
