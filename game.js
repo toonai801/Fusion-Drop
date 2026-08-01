@@ -403,6 +403,8 @@ class FusionGame {
     if (btnRestartDesk) btnRestartDesk.addEventListener('click', () => this.restart());
     document.getElementById('btn-save').addEventListener('click', () => this.saveScore());
     document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
+    // Phase B polish-26: Main Menu button on game-over -> back to intro without saving.
+    document.getElementById('btn-main-menu').addEventListener('click', () => this.returnToIntro());
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
     const btnRestartPause = document.getElementById('btn-restart-from-pause');
     if (btnRestartPause) btnRestartPause.addEventListener('click', () => this.restart());
@@ -1328,6 +1330,27 @@ class FusionGame {
         li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
       }
     }
+  }
+
+  // Phase B polish-26: return to the intro screen without saving.
+  returnToIntro() {
+    this.state = 'intro';
+    this.sounds.stopAmbient();
+    this.sounds.stopWarning();
+    this.entities = [];
+    this.score = 0;
+    this.dropsCount = 0;
+    this.mergesCount = 0;
+    this.achievements = new Set();
+    this._longestChain = 0;
+    this._chainLength = 0;
+    this._lastMergeAt = 0;
+    this._themeTransition = null;
+    this.clearPersistedGame();
+    document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('intro-screen').classList.remove('hidden');
+    document.getElementById('start-screen').classList.add('hidden');
+    if (typeof this.updateBestTodayBanner === 'function') this.updateBestTodayBanner();
   }
 
   restart() {
