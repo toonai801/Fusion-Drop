@@ -1135,6 +1135,11 @@ class FusionGame {
       this.clearPersistedGame();
     } else if (this.state === 'playing') {
       this.state = 'paused';
+      // Phase B polish-25: show the current score/level on the pause overlay.
+      const scoreEl = document.getElementById('pause-score');
+      const levelEl = document.getElementById('pause-level');
+      if (scoreEl) scoreEl.textContent = this.score;
+      if (levelEl) levelEl.textContent = this.level;
       document.getElementById('pause-overlay').classList.remove('hidden');
       this.canvas.style.pointerEvents = 'none';
       this.persistGame();

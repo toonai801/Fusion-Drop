@@ -306,6 +306,10 @@ body {
   box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
 }
 
+/* Phase B polish-25: pause stats row. */
+.pause-stats { margin: 16px 0 24px; font-size: 14px; color: rgba(207, 234, 255, 0.85); }
+.pause-stats strong { color: #00f0ff; font-weight: 700; }
+
 /* Intro screen */
 .intro-content {
   max-width: 360px;
