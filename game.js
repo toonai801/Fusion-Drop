@@ -1,5 +1,15 @@
 const CANVAS_W = 400;
 const CANVAS_H = 600;
+// Phase B polish-16: convert hex color to rgba string with alpha.
+function hexToRgba(hex, alpha) {
+  const h = (hex || '').replace('#', '');
+  if (h.length !== 6) return 'rgba(0, 212, 255, ' + alpha + ')';
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+
 const DROP_LINE_Y = 90;
 const MAX_PREVIEW_TIER = 2;
 const GRACE_FRAMES = 180;
@@ -722,8 +732,12 @@ class FusionGame {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Background
+    // Background: tinted with the current theme's accent color so each
+    // level feels distinct. Tint is subtle (15% blend with dark base).
+    const themeColor = (this.currentTheme && this.currentTheme.color) || '#00d4ff';
     ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillStyle = hexToRgba(themeColor, 0.04);
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Grid
