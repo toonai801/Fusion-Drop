@@ -708,6 +708,19 @@ body {
 }
 .link-btn:hover { color: #ff7799; }
 
+/* Phase B polish-3: bigger tap target for the start-screen Start button
+   and a uniform overlay button style. */
+.overlay button, .overlay .btn {
+  min-width: 200px;
+  min-height: 44px;
+  font-size: 16px;
+}
+.overlay .link-btn {
+  min-width: auto;
+  min-height: auto;
+  font-size: 11px;
+}
+
 
 .intro-links {
   margin-top: 18px;
