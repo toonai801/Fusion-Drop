@@ -590,6 +590,54 @@ test('renderSpeedTimer stays hidden in classic mode', () => {
   // restore default mock
   sandbox.document.getElementById = () => mockCanvas;
 });
+// TEST 19: Name color flair (Phase 3)
+console.log('\n🎨 NAME COLOR FLAIR');
+test('colorForName returns a stable color for the same name', () => {
+  const game = new FusionGame();
+  const a = game.colorForName('TestPlayer');
+  const b = game.colorForName('TestPlayer');
+  assertEqual(a, b);
+});
+test('colorForName returns different colors for different names (likely)', () => {
+  const game = new FusionGame();
+  const a = game.colorForName('Alice');
+  const b = game.colorForName('Bob');
+  // Not strictly required to differ, but for two distinct short strings the
+  // hash should produce different hues >99% of the time.
+  assert(a !== b, 'distinct names should usually yield distinct colors');
+});
+test('colorForName returns default for empty/null name', () => {
+  const game = new FusionGame();
+  const empty = game.colorForName('');
+  const nul   = game.colorForName(null);
+  assertEqual(empty, 'rgba(207, 234, 255, 0.85)');
+  assertEqual(nul,   'rgba(207, 234, 255, 0.85)');
+});
+
+// TEST 20: Manifest sanity (Phase 3)
+console.log('\n📦 PWA MANIFEST');
+test('manifest.webmanifest exists and has required fields', () => {
+  const fs = require('fs');
+  const raw = fs.readFileSync('manifest.webmanifest', 'utf8');
+  const manifest = JSON.parse(raw);
+  assertEqual(manifest.name, 'Fusion Drop');
+  assertEqual(manifest.short_name, 'Fusion Drop');
+  assertEqual(manifest.start_url, '/');
+  assert(manifest.icons && manifest.icons.length >= 2, 'should have 2+ icon entries');
+  assert(manifest.icons.some(i => i.sizes === '192x192'), '192 icon');
+  assert(manifest.icons.some(i => i.sizes === '512x512'), '512 icon');
+});
+test('icon files exist on disk', () => {
+  const fs = require('fs');
+  assert(fs.existsSync('icon-192.png'));
+  assert(fs.existsSync('icon-512.png'));
+});
+test('og-card.png exists and is > 5 KB (sanity)', () => {
+  const fs = require('fs');
+  const s = fs.statSync('og-card.png');
+  assert(s.size > 5 * 1024, 'should be at least 5 KB');
+});
+
 
 
 

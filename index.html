@@ -4,7 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Fusion Drop</title>
-<link rel="stylesheet" href="style.css?v=16">
+<!-- Phase 3 — Open Graph / social preview metadata -->
+<meta property="og:title" content="Fusion Drop — a Suika-style merge game">
+<meta property="og:description" content="Drop shapes, merge them, evolve through 11 themes from Fusion to Cat. Free, offline-friendly, leaderboard-aware.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/og-card.png">
+<meta property="og:image:alt" content="Fusion Drop cover: glowing shapes from multiple themes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fusion Drop">
+<meta name="twitter:description" content="Drop shapes, merge them, evolve through 11 themes from Fusion to Cat.">
+<meta name="twitter:image" content="/og-card.png">
+<!-- Phase 3 — theme color for browser chrome -->
+<meta name="theme-color" content="#0a0a14">
+<!-- Phase 3 — PWA manifest -->
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Fusion Drop</title>
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 <div id="game-wrapper">
@@ -51,6 +66,10 @@
           <p>Fusion → Treasure → Slime → Potion → Planet → Food → Aquarium → Dice → Dungeon → Wizard → Cat</p>
         </div>
         <button id="btn-intro-start">Start Game</button>
+        <div class="intro-links">
+          <a href="/about.html">About</a>
+          <a href="/privacy.html">Privacy</a>
+        </div>
       </div>
     </div>
     <div id="start-screen" class="overlay hidden">
@@ -156,10 +175,10 @@ const backend = {
   }
 };
 </script>
-<script src="themes.js?v=16"></script>
-<script src="shapes.js?v=16"></script>
-<script src="physics.js?v=16"></script>
-<script src="sounds.js?v=16"></script>
-<script src="game.js?v=16"></script>
+<script src="themes.js?v=17"></script>
+<script src="shapes.js?v=17"></script>
+<script src="physics.js?v=17"></script>
+<script src="sounds.js?v=17"></script>
+<script src="game.js?v=17"></script>
 </body>
 </html>

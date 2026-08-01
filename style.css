@@ -698,6 +698,22 @@ body {
 }
 .link-btn:hover { color: #ff7799; }
 
+
+.intro-links {
+  margin-top: 18px;
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+}
+.intro-links a {
+  color: rgba(207, 234, 255, 0.7);
+  font-size: 12px;
+  text-decoration: underline;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.intro-links a:hover { color: #00f0ff; }
+
 /* Phase 2 — mode selector + daily-theme banner on the start screen. */
 .mode-selector {
   margin: 16px 0;

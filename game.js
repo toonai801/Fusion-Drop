@@ -160,6 +160,15 @@ class FusionGame {
     if (nameEl) nameEl.textContent = theme.name + ' (#' + (idx + 1) + ')';
   }
 
+  // Phase 3 — deterministic name flair. Same name = same color across sessions.
+  colorForName(name) {
+    if (!name) return 'rgba(207, 234, 255, 0.85)';
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    const hue = h % 360;
+    return 'hsl(' + hue + ', 70%, 65%)';
+  }
+
   renderSpeedTimer() {
     if (typeof document === 'undefined' || !document.getElementById) return;
     const el = document.getElementById('speed-timer');
@@ -976,7 +985,13 @@ class FusionGame {
       for (let i = 0; i < this.leaderboard.length; i++) {
         const entry = this.leaderboard[i];
         const li = document.createElement('li');
-        li.innerHTML = `<span>${i + 1}. ${escapeHtml(entry.name)}</span><span>${entry.score}</span>`;
+        const liSpan = document.createElement('span');
+        liSpan.style.color = this.colorForName(entry.name);
+        liSpan.textContent = (i + 1) + '. ' + entry.name;
+        const scoreSpan = document.createElement('span');
+        scoreSpan.textContent = entry.score;
+        li.appendChild(liSpan);
+        li.appendChild(scoreSpan);
         list.appendChild(li);
       }
       if (this.leaderboard.length === 0) {

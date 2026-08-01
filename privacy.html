@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Privacy · Fusion Drop</title>
+  <meta name="theme-color" content="#0a0a14">
+  <link rel="stylesheet" href="/style.css?v=16">
+  <style>
+    .privacy { max-width: 720px; margin: 40px auto; color: #cfeaff; font-family: Inter, sans-serif; line-height: 1.55; padding: 0 16px; }
+    .privacy h1 { color: #00f0ff; font-size: 28px; margin: 0 0 12px; }
+    .privacy h2 { color: #ffd700; font-size: 16px; margin: 20px 0 6px; letter-spacing: 1px; text-transform: uppercase; }
+    .privacy p, .privacy li { font-size: 14px; }
+    .privacy ul { padding-left: 20px; }
+    .privacy a { color: #00f0ff; }
+    .privacy time { color: rgba(207,234,255,0.55); font-size: 12px; }
+  </style>
+</head>
+<body class="privacy">
+  <h1>Fusion Drop — Privacy</h1>
+  <p><time>Last updated 2026-08-01</time></p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Local progress.</strong> Personal-best scores and achievement counts are stored in your browser's localStorage. They never leave your device unless you choose to submit a score to the leaderboard.</li>
+    <li><strong>Leaderboard submissions.</strong> When you tap "Save Score" at the end of a run, your player name, your final score, the mode you played, and a small set of game-stat counters (drops, merges, level reached) are sent to our game server and stored alongside the public leaderboard. We do not collect IP addresses beyond what the server logs automatically; we do not associate your score with an account, email, or device identifier.</li>
+  </ul>
+
+  <h2>What we do not collect</h2>
+  <ul>
+    <li>No analytics, tracking pixels, third-party cookies, or fingerprinting scripts.</li>
+    <li>No location, contacts, microphone, or camera access.</li>
+    <li>No social-login or OAuth. There is no account system.</li>
+  </ul>
+
+  <h2>How to delete your data</h2>
+  <p>Tap "Reset progress" on the start screen. This clears your local personal-best scores and any cached leaderboard data from your browser. Leaderboard entries that you previously submitted are not tied to an account and cannot be deleted individually — they're just rows on a public list. If you need an entry removed, open an issue on the public repository and we'll action it.</p>
+
+  <h2>Open source</h2>
+  <p>The game's source is available publicly. You can inspect, fork, and self-host. There are no hidden server-side behaviours beyond serving static files and the simple leaderboard endpoints described above.</p>
+
+  <p><a href="/">← Back to the game</a></p>
+</body>
+</html>
