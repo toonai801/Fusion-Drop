@@ -5,7 +5,10 @@ const url = require('url');
 
 const PORT = 8090;
 const SCORES_FILE = path.join(__dirname, 'scores.json');
-const ACTIVE_FILE = path.join(__dirname, 'active.json');
+const MAX_BODY_BYTES = 1024;          // Reject POSTs > 1 KB
+const MAX_SCORE = 99999;             // Sanity cap on leaderboard entries
+const MAX_NAME_LENGTH = 20;          // Prevent name-spam and XSS surface
+const NAME_PATTERN = /^[A-Za-z0-9 _\-\.\u00C0-\u017F]{1,20}$/;  // Letters, digits, space, _ - .
 
 function loadScores() {
   try {
@@ -16,24 +19,6 @@ function loadScores() {
 function saveScores(scores) {
   fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
 }
-
-function loadActive() {
-  try {
-    const data = JSON.parse(fs.readFileSync(ACTIVE_FILE, 'utf8'));
-    // Clean up inactive players (older than 30 seconds)
-    const now = Date.now();
-    return data.filter(p => now - p.lastSeen < 30000);
-  } catch (e) { return []; }
-}
-
-function saveActive(active) {
-  fs.writeFileSync(ACTIVE_FILE, JSON.stringify(active, null, 2));
-}
-
-const MAX_BODY_BYTES = 1024;          // Reject POSTs > 1 KB
-const MAX_SCORE = 99999;             // Sanity cap on leaderboard entries
-const MAX_NAME_LENGTH = 20;          // Prevent name-spam and XSS surface
-const NAME_PATTERN = /^[A-Za-z0-9 _\-\.\u00C0-\u017F]{1,20}$/;  // Letters, digits, space, _ - .
 
 // Rate limit: 30 POSTs per minute per IP (token bucket, 30 capacity, 0.5/s refill)
 const RATE_CAPACITY = 30;
@@ -91,15 +76,6 @@ function validateScoreEntry(raw) {
   return null;
 }
 
-function validateActiveUpdate(raw) {
-  if (!raw || typeof raw !== 'object') return 'invalid payload';
-  const { name, score } = raw;
-  if (typeof name !== 'string') return 'name must be a string';
-  if (!NAME_PATTERN.test(name)) return 'name has invalid characters or length';
-  if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > MAX_SCORE || !Number.isInteger(score)) return 'score out of range';
-  return null;
-}
-
 const mimeTypes = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -111,7 +87,16 @@ const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS: env-driven ALLOWED_ORIGIN (comma-sep). Default to local dev host.
+  const allowOrigin = (process.env.ALLOWED_ORIGIN || 'http://localhost:8090')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  const reqOrigin = req.headers.origin;
+  if (reqOrigin && allowOrigin.includes(reqOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -153,52 +138,6 @@ const server = http.createServer((req, res) => {
       scores.push(sanitized);
       scores.sort((a, b) => b.score - a.score);
       saveScores(scores.slice(0, 50));
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-    });
-    return;
-  }
-
-  // GET /api/active - currently playing players
-  if (pathname === '/api/active' && req.method === 'GET') {
-    const active = loadActive();
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(active));
-    return;
-  }
-
-  // POST /api/active - heartbeat from playing player
-  if (pathname === '/api/active' && req.method === 'POST') {
-    const ip = getClientIp(req);
-    if (!rateLimit(ip)) return SAVE_REJECT(res, 'rate limit exceeded', 429);
-    let body = '';
-    let aborted = false;
-    req.on('data', chunk => {
-      if (aborted) return;
-      body += chunk;
-      if (body.length > MAX_BODY_BYTES) {
-        aborted = true;
-        SAVE_REJECT(res, 'payload too large');
-        req.destroy();
-      }
-    });
-    req.on('end', () => {
-      if (aborted) return;
-      let update;
-      try { update = JSON.parse(body); } catch (e) { return SAVE_REJECT(res, 'invalid JSON'); }
-      const err = validateActiveUpdate(update);
-      if (err) return SAVE_REJECT(res, err);
-      let active = loadActive();
-      // Dedup by IP — one entry per source, not per name.
-      const existing = active.find(p => p.ip === ip);
-      if (existing) {
-        existing.name = update.name;
-        existing.score = update.score;
-        existing.lastSeen = Date.now();
-      } else {
-        active.push({ ip, name: update.name, score: update.score, lastSeen: Date.now() });
-      }
-      saveActive(active);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true }));
     });

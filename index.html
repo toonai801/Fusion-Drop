@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Fusion Drop</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <div id="game-wrapper">
@@ -27,8 +27,6 @@
     <div id="leaderboard-panel">
       <div class="lb-title">🏆 ALL TIME</div>
       <ol id="lb-list-desk"></ol>
-      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
-      <ol id="lb-active-desk"></ol>
     </div>
   </div>
 
@@ -100,8 +98,6 @@
     <div id="mobile-lb-row">
       <div class="lb-title">🏆 ALL TIME</div>
       <ol id="lb-list"></ol>
-      <div class="lb-subtitle">🔴 LIVE PLAYERS</div>
-      <ol id="lb-active"></ol>
     </div>
     <div id="mobile-chain">
       <div class="chain-label">CHAIN</div>
@@ -110,16 +106,30 @@
   </div>
 </div>
 
-<script src="supabase-backend.js?v=14"></script>
+<!-- FD-001-A2: supabase-backend.js removed; tiny local-server backend shim below -->
 <script>
-const SUPABASE_URL = 'https://ybnvqonahypxlsjjpzsx.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_XJm7JvqINIa1Od0DUIJNxg_Ij0KSRBU';
-const backend = new SupabaseBackend(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Minimal shim that talks to the local server's hardened /api/scores endpoint.
+// Replaces the supabase-backend.js that was deleted in this phase.
+const backend = {
+  async fetchScores() {
+    const r = await fetch('/api/scores');
+    if (!r.ok) return [];
+    return await r.json();
+  },
+  async saveScore(name, score, level) {
+    const r = await fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, level, date: Date.now() })
+    });
+    return r.ok;
+  }
+};
 </script>
-<script src="themes.js?v=14"></script>
-<script src="shapes.js?v=14"></script>
-<script src="physics.js?v=14"></script>
-<script src="sounds.js?v=14"></script>
-<script src="game.js?v=14"></script>
+<script src="themes.js?v=15"></script>
+<script src="shapes.js?v=15"></script>
+<script src="physics.js?v=15"></script>
+<script src="sounds.js?v=15"></script>
+<script src="game.js?v=15"></script>
 </body>
 </html>

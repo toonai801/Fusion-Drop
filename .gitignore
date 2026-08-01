@@ -1,3 +1,7 @@
 node_modules/
 *.log
 .DS_Store
+
+# FD-001-A2: runtime state files (regenerated on every server boot/save)
+scores.json
+active.json

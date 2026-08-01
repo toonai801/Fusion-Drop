@@ -44,7 +44,7 @@ class FusionGame {
     this.bindEvents();
     this.showIntroScreen();
     this.fetchLeaderboard();
-    this.startActivePolling();
+    // startActivePolling removed — FD-001-A2: live-players heartbeat theater cut
     this.initAmbientParticles();
     this.loop();
 
@@ -201,30 +201,6 @@ class FusionGame {
         this.renderLeaderboard();
       } catch (_) {}
     }
-  }
-
-  async fetchActivePlayers() {
-    if (typeof backend === 'undefined') { this.renderActivePlayers([]); return; }
-    try {
-      const active = await backend.fetchActivePlayers();
-      this.renderActivePlayers(active.map(p => ({ name: p.player_name, score: p.score, lastSeen: p.last_seen })));
-    } catch (e) {
-      console.error('Active players fetch failed:', e);
-      this.renderActivePlayers([]);
-    }
-  }
-
-  async reportActive() {
-    if (!this.playerName || this.state !== 'playing') return;
-    if (typeof backend === 'undefined') return;
-    try {
-      await backend.heartbeat(this.playerName, this.score);
-    } catch (e) { /* Silent fail for heartbeats */ }
-  }
-
-  startActivePolling() {
-    setInterval(() => this.reportActive(), 5000);
-    setInterval(() => this.fetchActivePlayers(), 5000);
   }
 
   handleMove(e) {
@@ -672,26 +648,6 @@ class FusionGame {
       if (this.leaderboard.length === 0) {
         const li = document.createElement('li');
         li.textContent = 'No scores yet'; li.style.justifyContent = 'center';
-        li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
-      }
-    }
-  }
-
-  renderActivePlayers(active) {
-    const lists = [document.getElementById('lb-active'), document.getElementById('lb-active-desk')];
-    for (const list of lists) {
-      if (!list) continue;
-      list.innerHTML = '';
-      active.sort((a, b) => b.score - a.score);
-      for (let i = 0; i < active.length; i++) {
-        const p = active[i];
-        const li = document.createElement('li');
-        li.innerHTML = `<span><span class="live-dot">●</span> ${escapeHtml(p.name)}</span><span>${p.score}</span>`;
-        list.appendChild(li);
-      }
-      if (active.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No active players'; li.style.justifyContent = 'center';
         li.style.color = 'rgba(0, 212, 255, 0.4)'; list.appendChild(li);
       }
     }
