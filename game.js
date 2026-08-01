@@ -204,6 +204,14 @@ class FusionGame {
     }
   }
 
+  // Phase B polish-15: sound toggle. Persists across sessions.
+  setSoundEnabled(enabled) {
+    if (this.sounds) this.sounds.enabled = !!enabled;
+    const btn = document.getElementById('btn-toggle-sound');
+    if (btn) btn.textContent = enabled ? '🔊 Sound On' : '🔇 Sound Off';
+    try { localStorage.setItem('fusion_drop_sound', enabled ? '1' : '0'); } catch (_) {}
+  }
+
   // Phase 3 — deterministic name flair. Same name = same color across sessions.
   colorForName(name) {
     if (!name) return 'rgba(207, 234, 255, 0.85)';
@@ -358,6 +366,19 @@ class FusionGame {
 
     if (typeof this.bindModeButtons === 'function') this.bindModeButtons();
     if (typeof this.updateDailyThemeBanner === 'function') this.updateDailyThemeBanner();
+    const soundBtn = document.getElementById('btn-toggle-sound');
+    if (soundBtn) {
+      // Initial label reflects current state.
+      try {
+        const cur = localStorage.getItem('fusion_drop_sound');
+        if (cur === '0') this.setSoundEnabled(false);
+        else this.setSoundEnabled(true);
+      } catch (_) { this.setSoundEnabled(true); }
+      soundBtn.addEventListener('click', () => {
+        const cur = this.sounds && this.sounds.enabled !== false;
+        this.setSoundEnabled(!cur);
+      });
+    }
     const resetBtn = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('btn-reset-progress') : null;
     if (resetBtn && resetBtn.addEventListener) {
       resetBtn.addEventListener('click', () => {
