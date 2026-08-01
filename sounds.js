@@ -136,6 +136,40 @@ class SoundManager {
     osc.stop(this.ctx.currentTime + 0.5);
   }
 
+  // Phase 1 — danger warning when the stack nears the death line.
+  // Idempotent: only allocates the oscillator nodes once; subsequent calls just
+  // ramp the gain to a target intensity (0..1).
+  playWarning(intensity = 1) {
+    if (!this.initialized) this.init();
+    if (!this.ctx) return;
+    if (!this._warningGain) {
+      this._warningOsc = this.ctx.createOscillator();
+      this._warningOsc2 = this.ctx.createOscillator();
+      this._warningGain = this.ctx.createGain();
+      this._warningOsc.type = 'sawtooth';
+      this._warningOsc2.type = 'triangle';
+      this._warningOsc.frequency.value = 90;
+      this._warningOsc2.frequency.value = 135;
+      this._warningGain.gain.value = 0;
+      this._warningOsc.connect(this._warningGain);
+      this._warningOsc2.connect(this._warningGain);
+      this._warningGain.connect(this.masterGain);
+      this._warningOsc.start();
+      this._warningOsc2.start();
+    }
+    const target = Math.max(0, Math.min(1, intensity)) * 0.18;
+    const now = this.ctx.currentTime;
+    this._warningGain.gain.cancelScheduledValues(now);
+    this._warningGain.gain.linearRampToValueAtTime(target, now + 0.25);
+  }
+
+  stopWarning() {
+    if (!this._warningGain || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._warningGain.gain.cancelScheduledValues(now);
+    this._warningGain.gain.linearRampToValueAtTime(0, now + 0.2);
+  }
+
   // Ambient space drone
   startAmbient() {
     if (!this.initialized) this.init();

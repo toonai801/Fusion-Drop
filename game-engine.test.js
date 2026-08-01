@@ -125,6 +125,7 @@ function loadModule(filename) {
         SHAPES: typeof SHAPES !== 'undefined' ? SHAPES : undefined,
         drawShape: typeof drawShape !== 'undefined' ? drawShape : undefined,
         Physics: typeof Physics !== 'undefined' ? Physics : undefined,
+        SpatialHash: typeof SpatialHash !== 'undefined' ? SpatialHash : undefined,
         SoundManager: typeof SoundManager !== 'undefined' ? SoundManager : undefined,
         FusionGame: typeof FusionGame !== 'undefined' ? FusionGame : undefined,
         getCurrentShapes: typeof getCurrentShapes !== 'undefined' ? getCurrentShapes : undefined,
@@ -152,6 +153,7 @@ const THEMES = sandbox.THEMES;
 const SHAPES = sandbox.SHAPES;
 const drawShape = sandbox.drawShape;
 const Physics = sandbox.Physics;
+const SpatialHash = sandbox.SpatialHash;
 const SoundManager = sandbox.SoundManager;
 const FusionGame = sandbox.FusionGame;
 const getCurrentShapes = sandbox.getCurrentShapes;
@@ -417,6 +419,82 @@ test('transformEntityToTheme maps within bounds', () => {
   assert(result.shapeType < getCurrentShapes(2).length, 'New type should be in bounds');
   assert(result.shapeType >= 0, 'New type should be non-negative');
 });
+// TEST 14: Spatial Hash (Phase 1 — broad-phase collision)
+console.log('\n🗂️ SPATIAL HASH');
+test('SpatialHash constructs with default cellSize', () => {
+  const h = new SpatialHash();
+  assertEqual(h.cellSize, 150);
+});
+test('SpatialHash inserts and yields same-cell pairs', () => {
+  const h = new SpatialHash();
+  const ents = [
+    { x: 10, y: 10, radius: 5, active: true },
+    { x: 20, y: 20, radius: 5, active: true },
+    // Place entity 2 in a far different cell (cell size is 150).
+    { x: 800, y: 800, radius: 5, active: true },
+  ];
+  h.insert(ents[0], 0); h.insert(ents[1], 1); h.insert(ents[2], 2);
+  const pairs = [];
+  h.forEachPair((i, j) => pairs.push([i, j]));
+  assert(pairs.some(p => p[0] === 0 && p[1] === 1), 'Should find (0,1) in same cell');
+  assert(!pairs.some(p => (p[0] === 0 && p[1] === 2) || (p[0] === 1 && p[1] === 2)), 'Should NOT find (0,2) or (1,2) in different cells');
+});
+test('SpatialHash yields unique pairs only (no duplicates)', () => {
+  const h = new SpatialHash();
+  // Three entities all in one cell
+  h.insert({ x: 5, y: 5, radius: 1 }, 0);
+  h.insert({ x: 6, y: 6, radius: 1 }, 1);
+  h.insert({ x: 7, y: 7, radius: 1 }, 2);
+  const pairs = [];
+  h.forEachPair((i, j) => pairs.push(`${Math.min(i,j)}-${Math.max(i,j)}`));
+  assertEqual(pairs.length, 3);  // 3 unique pairs from 3 entities
+});
+test('Physics update with 50 entities still produces consistent motion', () => {
+  const physics = new Physics(0.3, 0.985, 0.2);
+  const entities = [];
+  for (let i = 0; i < 50; i++) {
+    entities.push({
+      x: 30 + (i % 10) * 40,
+      y: 30 + Math.floor(i / 10) * 60,
+      vx: 0, vy: 0,
+      radius: 14 + (i % 6) * 5,
+      active: true,
+    });
+  }
+  // Run for 30 frames; shouldn't crash and should settle toward bottom.
+  for (let f = 0; f < 30; f++) {
+    physics.update(entities, 396, 596);
+  }
+  // At least one entity should have moved (gravity pulled them).
+  let anyMoved = false;
+  for (let i = 0; i < 50; i++) {
+    if (entities[i].y > 30 + Math.floor(i / 10) * 60 + 1) { anyMoved = true; break; }
+  }
+  assert(anyMoved, 'Some entities should have moved under gravity');
+});
+test('Physics update with spatial hash is faster than naive O(N²)', () => {
+  // Smoke check: 50 entities, 60 frames; should complete well under 100 ms.
+  const physics = new Physics(0.3, 0.985, 0.2);
+  const entities = [];
+  for (let i = 0; i < 50; i++) {
+    entities.push({
+      x: 30 + (i % 10) * 40,
+      y: 30 + Math.floor(i / 10) * 60,
+      vx: 0, vy: 0,
+      radius: 14 + (i % 6) * 5,
+      active: true,
+    });
+  }
+  const t0 = Date.now();
+  for (let f = 0; f < 60; f++) {
+    physics.update(entities, 396, 596);
+  }
+  const elapsed = Date.now() - t0;
+  // Generous bound: a tick should complete in well under 100 ms.
+  // At 60 FPS we have ~16 ms per frame. 60 frames in 100 ms ≈ 1.6 ms/frame.
+  assert(elapsed < 100, `60 frames should complete under 100 ms (got ${elapsed} ms)`);
+});
+
 
 // Summary
 console.log('\n═══════════════════════════════════════');

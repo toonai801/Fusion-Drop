@@ -41,6 +41,8 @@ class FusionGame {
     this.frameCount = 0;
 
     this.renderShapeChain();
+    this.reducedMotion = typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.bindEvents();
     this.showIntroScreen();
     this.fetchLeaderboard();
@@ -175,6 +177,14 @@ class FusionGame {
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.drop(); }
       if (e.code === 'Escape') this.togglePause();
+      // Phase 1 — keyboard aim (Left/Right or A/D)
+      if (this.state === 'playing') {
+        const step = 14;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.moveAim(-step);
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') this.moveAim(step);
+      }
+      // Phase 1 — keyboard restart
+      if (e.code === 'KeyR' && (this.state === 'game-over' || this.state === 'paused')) this.restart();
     });
   }
 
@@ -201,6 +211,15 @@ class FusionGame {
         this.renderLeaderboard();
       } catch (_) {}
     }
+  }
+
+  // Phase 1 — programmatic aim step (used by keyboard arrow keys).
+  moveAim(dx) {
+    if (this.state !== 'playing') return;
+    const w = this.canvas ? this.canvas.width : CANVAS_W;
+    this.dropX = Math.max(20, Math.min(w - 20, this.dropX + dx));
+    // Trigger an aim-render so the preview indicator moves without needing a mouse event.
+    if (typeof this.renderAim === 'function') this.renderAim();
   }
 
   handleMove(e) {
@@ -390,6 +409,34 @@ class FusionGame {
     this.entities = this.entities.filter(e => e.active);
     if (biggestMerged) this.checkLevelComplete();
 
+    // Phase 1 — danger warning. Compute once per frame and ramp the warning tone.
+    // Thresholds: 0 if any entity is far below the line, ramps to 1 within 100 px.
+    let highestAbove = -Infinity;
+    for (const e of this.entities) {
+      if (e.active && e.immuneTimer <= 0) {
+        const top = e.y - e.radius;
+        if (top < deathLine && top > highestAbove) highestAbove = top;
+      }
+    }
+    if (highestAbove === -Infinity || (deathLine - highestAbove) > 100) {
+      // Far from danger — stop the warning if it was running.
+      if (this._warningOn) {
+        this.sounds.stopWarning();
+        this._warningOn = false;
+      }
+    } else {
+      const intensity = Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / 100));
+      // Only call playWarning when intensity changes meaningfully (>10%) to avoid per-frame work.
+      if (this.reducedMotion) {
+        if (this._warningOn) { this.sounds.stopWarning(); this._warningOn = false; }
+      } else if (!this._warningOn || Math.abs(intensity - (this._warningIntensity || 0)) > 0.1) {
+        this.sounds.playWarning(intensity);
+        this._warningOn = true;
+        this._warningIntensity = intensity;
+      }
+    }
+    this._dangerLevel = highestAbove === -Infinity ? 0 : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / 100));
+
     // Wait for last dropped entity to land before allowing next drop
     // A dropped entity is the one still within its initial immune period
     const lastDropped = this.entities.find(e => e.immuneTimer > 0);
@@ -432,11 +479,35 @@ class FusionGame {
     ctx.beginPath(); ctx.roundRect(4, 4, this.canvas.width - 8, this.canvas.height - 8, 8);
     ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
 
-    // Death line
+    // Death line + danger zone glow (Phase 1).
+    // Compute proximity to the line from the highest non-immune entity.
     const deathLine = this.getDeathLine();
+    let highestAbove = -Infinity;
+    for (const e of this.entities) {
+      if (e.active && e.immuneTimer <= 0) {
+        const top = e.y - e.radius;
+        if (top < deathLine && top > highestAbove) highestAbove = top;
+      }
+    }
+    // 0..1, ramps as stack approaches the line.
+    const dangerDist = 100;
+    const danger = highestAbove === -Infinity
+      ? 0
+      : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / dangerDist));
+
+    // Filled danger zone above the line.
+    if (danger > 0) {
+      ctx.save();
+      ctx.fillStyle = `rgba(255, 0, 102, ${0.06 + danger * 0.18})`;
+      ctx.fillRect(4, deathLine - 4, this.canvas.width - 8, 4 - (deathLine - 4));
+      ctx.restore();
+    }
+
     ctx.beginPath(); ctx.setLineDash([6, 6]);
     ctx.moveTo(4, deathLine); ctx.lineTo(this.canvas.width - 4, deathLine);
-    ctx.strokeStyle = 'rgba(255, 0, 102, 0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+    const lineAlpha = 0.4 + danger * 0.5;
+    ctx.strokeStyle = `rgba(255, ${Math.round(80 - danger * 60)}, ${Math.round(140 - danger * 60)}, ${lineAlpha})`;
+    ctx.lineWidth = 1.5 + danger * 1.5; ctx.stroke();
     ctx.setLineDash([]);
 
     // Level indicator
@@ -527,6 +598,7 @@ class FusionGame {
   }
 
   triggerScreenShake() {
+    if (this.reducedMotion) return;
     const wrapper = document.getElementById('game-wrapper');
     wrapper.classList.remove('shake');
     void wrapper.offsetWidth;
@@ -562,11 +634,70 @@ class FusionGame {
       this.state = 'playing';
       document.getElementById('pause-overlay').classList.add('hidden');
       this.canvas.style.pointerEvents = 'auto';
+      this.clearPersistedGame();
     } else if (this.state === 'playing') {
       this.state = 'paused';
       document.getElementById('pause-overlay').classList.remove('hidden');
       this.canvas.style.pointerEvents = 'none';
+      this.persistGame();
     }
+  }
+
+  // Phase 1 — persist current game state to localStorage so a refresh preserves it.
+  persistGame() {
+    try {
+      const snap = {
+        version: 1,
+        score: this.score,
+        level: this.level,
+        playerName: this.playerName,
+        currentShape: this.currentShape,
+        nextShape: this.nextShape,
+        dropX: this.dropX,
+        entities: this.entities.map(e => ({
+          x: e.x, y: e.y, vx: e.vx || 0, vy: e.vy || 0,
+          radius: e.radius, shapeType: e.shapeType, active: e.active,
+          spawnScale: e.spawnScale, targetScale: e.targetScale,
+          immuneTimer: e.immuneTimer || 0,
+          hasBeenBelowLine: !!e.hasBeenBelowLine,
+          settleTimer: e.settleTimer || 0,
+        })),
+        currentTheme: this.level - 1,  // THEMES index is level-1
+      };
+      localStorage.setItem('fusion_drop_paused', JSON.stringify(snap));
+    } catch (e) { /* localStorage quota or disabled — ignore */ }
+  }
+
+  clearPersistedGame() {
+    try { localStorage.removeItem('fusion_drop_paused'); } catch (_) {}
+  }
+
+  hasPersistedGame() {
+    try {
+      const raw = localStorage.getItem('fusion_drop_paused');
+      if (!raw) return false;
+      const snap = JSON.parse(raw);
+      return !!(snap && Array.isArray(snap.entities));
+    } catch (_) { return false; }
+  }
+
+  // Restore from a saved snapshot. Called when the player chooses "Resume" on a paused-state restore UI.
+  restorePersistedGame() {
+    let snap;
+    try { snap = JSON.parse(localStorage.getItem('fusion_drop_paused') || 'null'); } catch (_) { snap = null; }
+    if (!snap || !Array.isArray(snap.entities)) return false;
+    this.score = snap.score || 0;
+    this.level = snap.level || 1;
+    this.playerName = snap.playerName || '';
+    this.currentShape = snap.currentShape || 0;
+    this.nextShape = snap.nextShape || 0;
+    this.dropX = snap.dropX || (this.canvas.width / 2);
+    this.currentTheme = THEMES[Math.max(0, Math.min(THEMES.length - 1, snap.currentTheme || 0))];
+    this.entities = snap.entities.map(e => ({ ...e, active: e.active !== false }));
+    this.state = 'playing';
+    this.updateScoreDisplay();
+    this.updateHighScoreDisplay();
+    return true;
   }
 
   endGame() {

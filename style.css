@@ -683,3 +683,15 @@ body {
     line-height: 1.5;
   }
 }
+
+/* Phase 1 — reduced-motion: respect users who request no animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .shake {
+    animation: none !important;
+  }
+}
