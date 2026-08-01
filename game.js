@@ -1012,14 +1012,22 @@ class FusionGame {
 
     // Next preview (mobile)
     const previewShapes = this.getShapes();
-    if (this.nextCtx) {
+    if (this.nextCtx && this.nextShape < previewShapes.length) {
       this.nextCtx.clearRect(0, 0, 80, 80);
-      drawShape(this.nextCtx, 40, 40, this.nextShape, 1.0, previewShapes);
+      // Phase B polish-27: scale the preview so the largest shapes still
+      // fit inside the 80x80 mobile canvas. Use 35 px as the max radius
+      // and scale down if needed.
+      const ns = previewShapes[this.nextShape];
+      const scale = Math.min(1.0, 35 / Math.max(1, ns.radius));
+      drawShape(this.nextCtx, 40, 40, this.nextShape, scale, previewShapes);
     }
     // Next preview (desktop)
-    if (this.nextCtxDesk) {
+    if (this.nextCtxDesk && this.nextShape < previewShapes.length) {
       this.nextCtxDesk.clearRect(0, 0, 120, 120);
-      drawShape(this.nextCtxDesk, 60, 60, this.nextShape, 1.4, previewShapes);
+      // Desktop has a 120x120 canvas; max radius ~45 px to ensure padding.
+      const ns = previewShapes[this.nextShape];
+      const scale = Math.min(1.4, 45 / Math.max(1, ns.radius));
+      drawShape(this.nextCtxDesk, 60, 60, this.nextShape, scale, previewShapes);
     }
   }
 
