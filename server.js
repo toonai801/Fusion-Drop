@@ -17,7 +17,26 @@ function loadScores() {
 }
 
 function saveScores(scores) {
-  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
+  // Phase 4 — atomic write. Write to a temp file, fsync, rename. Survives
+  // -9 mid-write by leaving the previous scores.json intact (or zero-byte
+  // recoverable if this is the first write). Limits file growth via caps
+  // elsewhere in the validation pipeline.
+  const tmpPath = SCORES_FILE + '.tmp.' + process.pid + '.' + Date.now();
+  const data = JSON.stringify(scores, null, 2);
+  try {
+    const fd = fs.openSync(tmpPath, 'w');
+    try {
+      fs.writeSync(fd, data);
+      if (typeof fs.fsyncSync === 'function') fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+    fs.renameSync(tmpPath, SCORES_FILE);
+  } catch (e) {
+    // Last-resort fallback: keep using the old write semantics.
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
+    fs.writeFileSync(SCORES_FILE, data);
+  }
 }
 
 // Rate limit: 30 POSTs per minute per IP (token bucket, 30 capacity, 0.5/s refill)
@@ -95,6 +114,20 @@ const mimeTypes = {
   '.json': 'application/json',
 };
 
+// Phase 4 — lightweight in-memory telemetry ring buffer + /api/diag endpoint.
+// No third-party SDK. Caps at MAX_DIAG entries to bound memory growth.
+const MAX_DIAG = 200;
+const diagBuffer = [];
+function diag(type, detail) {
+  diagBuffer.push({ t: Date.now(), type, detail: detail || null });
+  if (diagBuffer.length > MAX_DIAG) diagBuffer.shift();
+}
+// Counters for quick health snapshots.
+const diagCounters = {
+  requests: 0, failedScores: 0, rateLimited: 0,
+  postScores: 0, getScores: 0, getDiag: 0,
+};
+
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
@@ -112,12 +145,14 @@ const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  diagCounters.requests++;
   if (req.method === 'OPTIONS') {
     res.writeHead(200); res.end(); return;
   }
 
   // GET /api/scores - all-time leaderboard
   if (pathname === '/api/scores' && req.method === 'GET') {
+    diagCounters.getScores++;
     const scores = loadScores();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(scores));
@@ -127,7 +162,8 @@ const server = http.createServer((req, res) => {
   // POST /api/scores - save finished game score
   if (pathname === '/api/scores' && req.method === 'POST') {
     const ip = getClientIp(req);
-    if (!rateLimit(ip)) return SAVE_REJECT(res, 'rate limit exceeded', 429);
+    if (!rateLimit(ip)) { diagCounters.rateLimited++; return SAVE_REJECT(res, 'rate limit exceeded', 429); }
+    diagCounters.postScores++;
     let body = '';
     let aborted = false;
     req.on('data', chunk => {
@@ -144,7 +180,7 @@ const server = http.createServer((req, res) => {
       let entry;
       try { entry = JSON.parse(body); } catch (e) { return SAVE_REJECT(res, 'invalid JSON'); }
       const err = validateScoreEntry(entry);
-      if (err) return SAVE_REJECT(res, err);
+      if (err) { diagCounters.failedScores++; diag('score_rejected', err); return SAVE_REJECT(res, err); }
       const sanitized = { name: entry.name, score: entry.score, level: entry.level || 1, date: entry.date || Date.now() };
       const scores = loadScores();
       scores.push(sanitized);
@@ -155,6 +191,40 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+
+  // Phase 4 — diagnostic endpoint. Counters + last 200 telemetry events.
+  if (pathname === '/api/diag' && req.method === 'GET') {
+    diagCounters.getDiag++;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      uptimeMs: process.uptime() * 1000 | 0,
+      memMB: Math.round(process.memoryUsage().rss / (1024 * 1024) * 10) / 10,
+      counters: diagCounters,
+      recent: diagBuffer.slice(-50),
+    }));
+    return;
+  }
+  if (pathname === '/api/diag' && req.method === 'POST') {
+    diagCounters.diagPosts = (diagCounters.diagPosts || 0) + 1;
+    let body = '';
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      body += chunk;
+      if (body.length > 4096) { aborted = true; res.writeHead(413); res.end(); req.destroy(); }
+    });
+    req.on('end', () => {
+      if (aborted) return;
+      try {
+        const evt = JSON.parse(body || '{}');
+        diag(evt.type || 'client_event', evt.detail || evt);
+      } catch (_) {}
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+    return;
+  }
+
 
   // Static files — with path-traversal protection.
   let filePath = pathname === '/' ? '/index.html' : pathname;

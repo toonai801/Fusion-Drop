@@ -637,6 +637,35 @@ test('og-card.png exists and is > 5 KB (sanity)', () => {
   const s = fs.statSync('og-card.png');
   assert(s.size > 5 * 1024, 'should be at least 5 KB');
 });
+// TEST 21: Phase 4 — env-var config + diag shape (CI smoke tests).
+console.log('\n🔬 INFRASTRUCTURE');
+test('server.js exposes /api/diag route + MAX_DIAG cap', () => {
+  const fs = require('fs');
+  const txt = fs.readFileSync('server.js', 'utf8');
+  assert(txt.includes("'/api/diag'"), 'server.js must define /api/diag');
+  assert(txt.includes('MAX_DIAG'), 'server.js must have a MAX_DIAG ring cap');
+});
+test('deploy.sh runs test:syntax + test:unit', () => {
+  const fs = require('fs');
+  const txt = fs.readFileSync('deploy.sh', 'utf8');
+  assert(/test:syntax/.test(txt), 'deploy.sh should run test:syntax');
+  assert(/test:unit/.test(txt), 'deploy.sh should run test:unit');
+});
+test('CI workflow runs syntax + unit + e2e + installs Playwright', () => {
+  const fs = require('fs');
+  const txt = fs.readFileSync('.github/workflows/ci.yml', 'utf8');
+  assert(/test:syntax/.test(txt), 'ci.yml runs test:syntax');
+  assert(/test:unit/.test(txt), 'ci.yml runs test:unit');
+  assert(/test:e2e/.test(txt), 'ci.yml runs test:e2e');
+  assert(/playwright install/.test(txt), 'ci.yml installs Playwright browsers');
+});
+test('saveScores uses atomic temp + rename', () => {
+  const fs = require('fs');
+  const txt = fs.readFileSync('server.js', 'utf8');
+  const fnTxt = txt.split('function saveScores')[1] || '';
+  assert(/renameSync/.test(fnTxt), 'saveScores should renameSync');
+});
+
 
 
 

@@ -81,6 +81,24 @@ class FusionGame {
     this.dropsCount = 0;
     this.mergesCount = 0;
     this.achievements = new Set();
+
+    // Phase 4 — forward client-side errors to /api/diag. Best-effort, no
+    // throw if the network call fails.
+    if (typeof window !== 'undefined' && !window.__fd_diag_wired) {
+      window.__fd_diag_wired = true;
+      window.addEventListener('error', (ev) => {
+        try {
+          fetch('/api/diag', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'window.onerror', detail: { msg: ev.message, src: ev.filename, line: ev.lineno, col: ev.colno } }) }).catch(() => {});
+        } catch (_) {}
+      });
+      window.addEventListener('unhandledrejection', (ev) => {
+        try {
+          fetch('/api/diag', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'unhandledrejection', detail: { reason: String(ev.reason) } }) }).catch(() => {});
+        } catch (_) {}
+      });
+    }
   }
 
   getShapes() { return getCurrentShapes(this.level); }
