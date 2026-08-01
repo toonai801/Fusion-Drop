@@ -168,9 +168,12 @@ body {
 }
 
 #game-canvas {
+  width: 400px;
+  height: 600px;
   border-radius: 12px;
   box-shadow: 0 0 30px rgba(0, 212, 255, 0.15), inset 0 0 30px rgba(0,0,0,0.5);
   background: #0d1117;
+  display: block;
 }
 
 /* Right panel */

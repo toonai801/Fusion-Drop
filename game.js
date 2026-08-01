@@ -119,20 +119,17 @@ class FusionGame {
   }
 
   resize() {
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
-
-    // Simple approach: canvas internal size matches CSS size
-    this.canvas.style.width = w + 'px';
-    this.canvas.style.height = h + 'px';
-    this.canvas.width = w;
-    this.canvas.height = h;
+    // Use the canvas's actual CSS-rendered size (driven by CSS, not the parent).
+    // Previously this read the parent's getBoundingClientRect, which created a
+    // feedback loop on desktop (parent grew to canvas, canvas grew to parent).
+    const rect = this.canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width));
+    const h = Math.max(1, Math.round(rect.height));
+    if (this.canvas.width !== w)  this.canvas.width  = w;
+    if (this.canvas.height !== h) this.canvas.height = h;
     this.canvas.style.marginLeft = '0px';
     this.canvas.style.marginTop = '0px';
-
-    // Reset transform and scale to fill
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (this.ctx) this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   setMode(mode) {
@@ -405,6 +402,7 @@ class FusionGame {
   drop() {
     if (this.state !== 'playing') return;
     this.dropTimer = 0;
+    this.dropsCount++;
 
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
@@ -562,6 +560,8 @@ class FusionGame {
       this.addScorePopup(mx, my - 30, newS.score + bonusScore);
       this.addMergeFlash(mx, my);
       this.sounds.playMerge(newType);
+      this.mergesCount++;
+      this.checkAchievements();
     }
 
     this.entities = this.entities.filter(e => e.active);

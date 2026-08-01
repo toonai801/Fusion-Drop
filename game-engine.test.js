@@ -704,6 +704,35 @@ test('Frame-time ring buffer caps at 60', () => {
   }
   assertEqual(game._frameTimes.length, 60, 'frame-times ring should be capped at 60');
 });
+// TEST 23: Phase 2 — counter increments on actual gameplay flow.
+console.log('\n📈 COUNTER INCREMENTS');
+test('drop() increments dropsCount', () => {
+  const game = new FusionGame();
+  game.state = 'playing';
+  game.playerName = 'Test';
+  assertEqual(game.dropsCount, 0);
+  game.drop();
+  assertEqual(game.dropsCount, 1);
+  game.drop();
+  assertEqual(game.dropsCount, 2);
+});
+test('mergesCount is incremented by the merge execution path', () => {
+  // Direct unit test: trigger a merge by staging two same-tier entities and
+  // calling update() once. The merge logic should run, incrementing mergesCount.
+  const game = new FusionGame();
+  game.state = 'playing';
+  game.playerName = 'Test';
+  // Two same-tier entities close enough to overlap.
+  game.entities = [
+    { x: 200, y: 350, vx: 0, vy: 0, radius: 18, shapeType: 1, active: true, settleTimer: 0, hasBeenBelowLine: true, immuneTimer: 0, spawnScale: 1, targetScale: 1 },
+    { x: 209, y: 350, vx: 0, vy: 0, radius: 18, shapeType: 1, active: true, settleTimer: 0, hasBeenBelowLine: true, immuneTimer: 0, spawnScale: 1, targetScale: 1 },
+  ];
+  const before = game.mergesCount;
+  game.update();
+  assert(game.mergesCount > before, 'mergesCount should increment after a merge; before=' + before + ' after=' + game.mergesCount);
+});
+
+
 
 
 
