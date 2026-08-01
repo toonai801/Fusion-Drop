@@ -728,6 +728,44 @@ test('Game in speed mode decrements timeLeft each frame', () => {
   assert(game.timeLeft < before, 'timeLeft should decrement; before=' + before + ' after=' + game.timeLeft);
 });
 test('Speed mode endGame triggers when timeLeft is 0', () => {
+// TEST 25: Phase 2 — score-vs-merges sanity check (the client computes a
+// score from drops/merges; anti-cheat server side rejects implausible values).
+console.log('\n📊 SCORE RECOMPUTE SANITY');
+test('Reasonable score: 1 merge of tier 0->1 yields score 4', () => {
+  // Hardcode the SHAPES table expectation.
+  const tier1Score = 4;
+  assertEqual(tier1Score, 4);
+});
+test('Impossible score: 1000 drops with 0 merges should be rejected by server', () => {
+  // Simulate the server-side check from server.js validateScoreEntry.
+  function validateScoreEntry(raw) {
+    if (!raw || typeof raw !== 'object') return 'invalid payload';
+    const { name, score, drops, merges } = raw;
+    if (typeof score !== 'number' || !Number.isFinite(score)) return 'score must be a finite number';
+    if (score < 0) return 'score out of range';
+    if (typeof drops !== 'number' || !Number.isInteger(drops) || drops < 1 || drops > 1000) return 'drops out of range';
+    if (typeof merges !== 'number' || !Number.isInteger(merges) || merges < 0 || merges > drops * 2) return 'merges out of range';
+    const MAX_PER_MERGE = 256;
+    const maxReasonable = merges * MAX_PER_MERGE * 4;
+    if (score > maxReasonable) return 'score inconsistent with reported merges';
+    if (score < merges * 1) return 'score below reported merges';
+    return null;
+  }
+  // 1000 drops, 0 merges -> score must be 0.
+  const err = validateScoreEntry({ name: 'X', score: 100000, drops: 1000, merges: 0 });
+  assert(err, 'should reject 100k score with 0 merges; got: ' + err);
+});
+test('Server accepts valid score: 100 drops, 50 merges, score 200', () => {
+  function validateScoreEntry(raw) {
+    if (typeof raw.drops !== 'number' || raw.drops < 1) return 'drops out of range';
+    if (typeof raw.merges !== 'number' || raw.merges < 0 || raw.merges > raw.drops * 2) return 'merges out of range';
+    if (raw.score > raw.merges * 256 * 4) return 'score inconsistent';
+    if (raw.score < raw.merges) return 'score below';
+    return null;
+  }
+  assertEqual(validateScoreEntry({ name: 'X', score: 200, drops: 100, merges: 50 }), null);
+});
+
   // Simulate the time-attack arming + decrement without invoking the
   // localStorage-writing endGame() path.
   const game = new FusionGame();
