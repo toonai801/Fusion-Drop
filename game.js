@@ -677,11 +677,15 @@ class FusionGame {
       ? 0
       : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / dangerDist));
 
-    // Filled danger zone above the line.
+    // Filled danger zone above the line. The danger band spans the lower
+    // 100 px of the play area above the death line; intensity fades to
+    // 0 at the top edge of the band, full at the death line.
     if (danger > 0) {
       ctx.save();
       ctx.fillStyle = `rgba(255, 0, 102, ${0.06 + danger * 0.18})`;
-      ctx.fillRect(4, deathLine - 4, this.canvas.width - 8, 4 - (deathLine - 4));
+      const bandHeight = 100;
+      const top = Math.max(0, deathLine - bandHeight);
+      ctx.fillRect(4, top, this.canvas.width - 8, deathLine - top);
       ctx.restore();
     }
 
