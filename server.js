@@ -30,6 +30,36 @@ function saveActive(active) {
   fs.writeFileSync(ACTIVE_FILE, JSON.stringify(active, null, 2));
 }
 
+const MAX_BODY_BYTES = 1024;          // Reject POSTs > 1 KB
+const MAX_SCORE = 99999;             // Sanity cap on leaderboard entries
+const MAX_NAME_LENGTH = 20;          // Prevent name-spam and XSS surface
+const NAME_PATTERN = /^[A-Za-z0-9 _\-\.\u00C0-\u017F]{1,20}$/;  // Letters, digits, space, _ - .
+const SAVE_REJECT = (res, reason) => {
+  res.writeHead(400, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ success: false, error: reason }));
+};
+
+function validateScoreEntry(raw) {
+  if (!raw || typeof raw !== 'object') return 'invalid payload';
+  const { name, score, level, date } = raw;
+  if (typeof name !== 'string') return 'name must be a string';
+  if (!NAME_PATTERN.test(name)) return 'name has invalid characters or length';
+  if (typeof score !== 'number' || !Number.isFinite(score)) return 'score must be a finite number';
+  if (score < 0 || score > MAX_SCORE || !Number.isInteger(score)) return 'score out of range';
+  if (level !== undefined && (typeof level !== 'number' || !Number.isInteger(level) || level < 1 || level > 11)) return 'level out of range';
+  if (date !== undefined && (typeof date !== 'number' || !Number.isFinite(date))) return 'date out of range';
+  return null;
+}
+
+function validateActiveUpdate(raw) {
+  if (!raw || typeof raw !== 'object') return 'invalid payload';
+  const { name, score } = raw;
+  if (typeof name !== 'string') return 'name must be a string';
+  if (!NAME_PATTERN.test(name)) return 'name has invalid characters or length';
+  if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > MAX_SCORE || !Number.isInteger(score)) return 'score out of range';
+  return null;
+}
+
 const mimeTypes = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -60,19 +90,29 @@ const server = http.createServer((req, res) => {
   // POST /api/scores - save finished game score
   if (pathname === '/api/scores' && req.method === 'POST') {
     let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const entry = JSON.parse(body);
-        const scores = loadScores();
-        scores.push(entry);
-        scores.sort((a, b) => b.score - a.score);
-        saveScores(scores.slice(0, 50));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (e) {
-        res.writeHead(400); res.end('Bad request');
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      body += chunk;
+      if (body.length > MAX_BODY_BYTES) {
+        aborted = true;
+        SAVE_REJECT(res, 'payload too large');
+        req.destroy();
       }
+    });
+    req.on('end', () => {
+      if (aborted) return;
+      let entry;
+      try { entry = JSON.parse(body); } catch (e) { return SAVE_REJECT(res, 'invalid JSON'); }
+      const err = validateScoreEntry(entry);
+      if (err) return SAVE_REJECT(res, err);
+      const sanitized = { name: entry.name, score: entry.score, level: entry.level || 1, date: entry.date || Date.now() };
+      const scores = loadScores();
+      scores.push(sanitized);
+      scores.sort((a, b) => b.score - a.score);
+      saveScores(scores.slice(0, 50));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
     });
     return;
   }
@@ -88,24 +128,33 @@ const server = http.createServer((req, res) => {
   // POST /api/active - heartbeat from playing player
   if (pathname === '/api/active' && req.method === 'POST') {
     let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const update = JSON.parse(body); // { name, score }
-        let active = loadActive();
-        const existing = active.find(p => p.name === update.name);
-        if (existing) {
-          existing.score = update.score;
-          existing.lastSeen = Date.now();
-        } else {
-          active.push({ name: update.name, score: update.score, lastSeen: Date.now() });
-        }
-        saveActive(active);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (e) {
-        res.writeHead(400); res.end('Bad request');
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      body += chunk;
+      if (body.length > MAX_BODY_BYTES) {
+        aborted = true;
+        SAVE_REJECT(res, 'payload too large');
+        req.destroy();
       }
+    });
+    req.on('end', () => {
+      if (aborted) return;
+      let update;
+      try { update = JSON.parse(body); } catch (e) { return SAVE_REJECT(res, 'invalid JSON'); }
+      const err = validateActiveUpdate(update);
+      if (err) return SAVE_REJECT(res, err);
+      let active = loadActive();
+      const existing = active.find(p => p.name === update.name);
+      if (existing) {
+        existing.score = update.score;
+        existing.lastSeen = Date.now();
+      } else {
+        active.push({ name: update.name, score: update.score, lastSeen: Date.now() });
+      }
+      saveActive(active);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
     });
     return;
   }
