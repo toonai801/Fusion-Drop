@@ -1120,7 +1120,7 @@ class FusionGame {
     try {
       if (typeof backend !== 'undefined') {
         const ok = await backend.saveScore(name, this.score, this.level);
-        if (!ok) throw new Error('Failed to save score');
+        if (!ok) throw new Error('Server rejected the score (anti-cheat). Try again with a fresh run.');
       }
       await this.fetchLeaderboard();
       if (btnSave) {
