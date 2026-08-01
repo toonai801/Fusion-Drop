@@ -255,6 +255,24 @@ class FusionGame {
       this.enableCanvas();
       this.showStartScreen();
     }, { once: true });
+
+    // Phase B polish-13: 'Resume saved game' button appears if there's
+    // a persisted snapshot from a previous session.
+    const btnResume = document.getElementById('btn-resume-saved');
+    if (btnResume) {
+      if (this.hasPersistedGame()) {
+        btnResume.classList.remove('hidden');
+        btnResume.onclick = () => {
+          if (this.restorePersistedGame()) {
+            intro.classList.add('hidden');
+            this.enableCanvas();
+          }
+        };
+      } else {
+        btnResume.classList.add('hidden');
+        btnResume.onclick = null;
+      }
+    }
   }
 
   showStartScreen() {
@@ -1008,6 +1026,9 @@ class FusionGame {
         currentShape: this.currentShape,
         nextShape: this.nextShape,
         dropX: this.dropX,
+        dropsCount: this.dropsCount,
+        mergesCount: this.mergesCount,
+        achievements: Array.from(this.achievements || []),
         entities: this.entities.map(e => ({
           x: e.x, y: e.y, vx: e.vx || 0, vy: e.vy || 0,
           radius: e.radius, shapeType: e.shapeType, active: e.active,
@@ -1048,6 +1069,13 @@ class FusionGame {
     this.dropX = snap.dropX || (this.canvas.width / 2);
     this.currentTheme = THEMES[Math.max(0, Math.min(THEMES.length - 1, snap.currentTheme || 0))];
     this.entities = snap.entities.map(e => ({ ...e, active: e.active !== false }));
+    this.dropsCount = snap.dropsCount || 0;
+    this.mergesCount = snap.mergesCount || 0;
+    if (snap.achievements && Array.isArray(snap.achievements)) {
+      this.achievements = new Set(snap.achievements);
+    } else {
+      this.achievements = new Set();
+    }
     this.state = 'playing';
     this.updateScoreDisplay();
     this.updateHighScoreDisplay();
