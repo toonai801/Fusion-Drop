@@ -739,9 +739,22 @@ class FusionGame {
       const s = currentShapes[this.currentShape];
       const aimY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
       drawShape(ctx, this.dropX, aimY, this.currentShape, 1, currentShapes);
-      ctx.beginPath(); ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.setLineDash([4, 6]);
       ctx.moveTo(this.dropX, aimY + s.radius + 4); ctx.lineTo(this.dropX, this.canvas.height - 4);
-      ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+      // Phase B polish-9: brighter aim line that fades towards the death
+      // line, so the player can see where the shape will land.
+      const grad = ctx.createLinearGradient(this.dropX, aimY + s.radius + 4, this.dropX, this.canvas.height - 4);
+      grad.addColorStop(0, 'rgba(0, 240, 255, 0.6)');
+      grad.addColorStop(1, 'rgba(0, 212, 255, 0.05)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Aim dot at the drop point for clarity.
+      ctx.beginPath();
+      ctx.arc(this.dropX, aimY + s.radius + 4, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.8)';
+      ctx.fill();
     }
 
     // Particles
