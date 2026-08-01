@@ -167,6 +167,14 @@ class FusionGame {
     return days % THEMES.length;
   }
 
+  // Hours remaining until the next daily theme swap. Updates each render.
+  getDailyThemeHoursRemaining() {
+    const now = Date.now();
+    const msInDay = 1000 * 60 * 60 * 24;
+    const msLeft = msInDay - (now % msInDay);
+    return msLeft / (1000 * 60 * 60);
+  }
+
   updateDailyThemeBanner() {
     if (typeof document === 'undefined' || !document.getElementById) return;
     const banner = document.getElementById('daily-theme-banner');
@@ -177,6 +185,11 @@ class FusionGame {
     banner.classList.remove('hidden');
     const nameEl = banner.querySelector('.dt-name');
     if (nameEl) nameEl.textContent = theme.name + ' (#' + (idx + 1) + ')';
+    const hrEl = banner.querySelector('.dt-hours');
+    if (hrEl) {
+      const hrs = this.getDailyThemeHoursRemaining();
+      hrEl.textContent = hrs >= 1 ? (Math.round(hrs) + 'h') : (Math.round(hrs * 60) + 'm');
+    }
   }
 
   // Phase 3 — deterministic name flair. Same name = same color across sessions.

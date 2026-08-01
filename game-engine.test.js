@@ -732,6 +732,21 @@ test('Speed mode endGame triggers when timeLeft is 0', () => {
 // score from drops/merges; anti-cheat server side rejects implausible values).
 console.log('\n📊 SCORE RECOMPUTE SANITY');
 test('Reasonable score: 1 merge of tier 0->1 yields score 4', () => {
+// TEST 26: Daily theme countdown (Phase 3 polish).
+console.log('\n🕒 DAILY THEME COUNTDOWN');
+test('getDailyThemeHoursRemaining returns a value between 0 and 24', () => {
+  const game = new FusionGame();
+  const hrs = game.getDailyThemeHoursRemaining();
+  assert(typeof hrs === 'number');
+  assert(hrs > 0 && hrs <= 24, 'should be 0 < hrs <= 24, got ' + hrs);
+});
+test('Two calls return similar values (within 1 hour)', () => {
+  const game = new FusionGame();
+  const a = game.getDailyThemeHoursRemaining();
+  const b = game.getDailyThemeHoursRemaining();
+  assert(Math.abs(a - b) < 1, 'should be stable within 1 hour');
+});
+
   // Hardcode the SHAPES table expectation.
   const tier1Score = 4;
   assertEqual(tier1Score, 4);

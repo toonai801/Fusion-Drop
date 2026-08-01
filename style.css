@@ -151,9 +151,11 @@ body {
 #leaderboard-panel ol, #lb-list, #lb-active, #lb-list-desk, #lb-active-desk {
   list-style-position: inside;
   margin: 0;
-  padding: 0;
+  padding: 0 4px 0 0;
   font-size: 12px;
   line-height: 1.8;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 #leaderboard-panel ol li, #lb-list li, #lb-active li, #lb-list-desk li, #lb-active-desk li {
@@ -234,11 +236,16 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   background: rgba(10, 10, 15, 0.95);
   border-radius: 12px;
   backdrop-filter: blur(10px);
   z-index: 100;
+  overflow-y: auto;
+  /* When content overflows the canvas (small mobile viewports), keep
+     the content scrollable inside the overlay rather than clipped. */
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .overlay.hidden {
@@ -719,10 +726,10 @@ body {
 
 /* Phase 2 — mode selector + daily-theme banner on the start screen. */
 .mode-selector {
-  margin: 16px 0;
+  margin: 8px 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   max-width: 280px;
 }
 .mode-selector .mode-title {
@@ -738,13 +745,13 @@ body {
   color: #cfeaff;
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 7px 12px;
   font-family: inherit;
   cursor: pointer;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .mode-btn:hover { background: rgba(0, 212, 255, 0.12); }
@@ -766,6 +773,8 @@ body {
 }
 .daily-theme-banner.hidden { display: none; }
 .daily-theme-banner .dt-label { font-weight: 700; margin-right: 6px; }
+.daily-theme-banner .dt-sep { margin: 0 6px; opacity: 0.4; }
+.daily-theme-banner .dt-hours { color: rgba(255, 236, 139, 0.7); font-weight: 600; }
 
 /* In-game timer (Speed mode) */
 #speed-timer {
