@@ -136,26 +136,27 @@ class SoundManager {
     });
   }
 
-  // Game over sound
+  // Phase B polish-24: 3-note descending minor chord on game over.
+  // Was a single sawtooth sweep; now a 4th-octave -> 3rd-octave -> 2nd-octave
+  // minor-third descent for more impact.
   playGameOver() {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
 
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.5);
-    
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
-    
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    
-    osc.start(this.ctx.currentTime);
-    osc.stop(this.ctx.currentTime + 0.5);
+    const notes = [349.23, 311.13, 261.63]; // F4 -> Eb4 -> C4 (descending minor)
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.12);
+      gain.gain.setValueAtTime(0, this.ctx.currentTime + i * 0.12);
+      gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + i * 0.12 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.12 + 0.5);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(this.ctx.currentTime + i * 0.12);
+      osc.stop(this.ctx.currentTime + i * 0.12 + 0.5);
+    });
   }
 
   // Phase 1 — danger warning when the stack nears the death line.
