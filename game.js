@@ -314,14 +314,15 @@ class FusionGame {
     const btnRestartPause = document.getElementById('btn-restart-from-pause');
     if (btnRestartPause) btnRestartPause.addEventListener('click', () => this.restart());
 
+    // Phase B polish-10: mobile leaderboard collapsible.
     const lbToggle = document.getElementById('lb-toggle');
-    if (lbToggle) {
+    const lbContent = document.getElementById('lb-content');
+    if (lbToggle && lbContent) {
+      // Start collapsed on mobile.
+      lbContent.classList.add('hidden');
       lbToggle.addEventListener('click', () => {
-        const content = document.getElementById('lb-content');
-        if (content) {
-          content.classList.toggle('hidden');
-          lbToggle.textContent = content.classList.contains('hidden') ? '🏆 Leaderboard ▼' : '🏆 Leaderboard ▲';
-        }
+        const hidden = lbContent.classList.toggle('hidden');
+        lbToggle.textContent = hidden ? '🏆 Leaderboard' : '🏆 Leaderboard ✕';
       });
     }
 

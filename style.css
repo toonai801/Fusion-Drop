@@ -563,6 +563,27 @@ body {
     border-bottom: 1px solid rgba(255,255,255,0.05);
   }
 
+  /* Phase B polish-10: collapsible mobile leaderboard. */
+  .lb-toggle-btn {
+    width: 100%;
+    background: transparent;
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .lb-toggle-btn:hover {
+    background: rgba(255, 215, 0, 0.1);
+  }
+  .lb-content.hidden {
+    display: none;
+  }
+
   #mobile-chain {
     display: flex;
     flex-direction: column;
