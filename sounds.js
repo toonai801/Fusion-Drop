@@ -110,12 +110,15 @@ class SoundManager {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
 
-    const notes = [523.25, 659.25, 783.99]; // C major chord
+    // Phase B polish-19: theme-keyed chord.
+    const THEME_BASES = [261.63, 220.00, 246.94, 261.63, 196.00, 246.94, 261.63, 220.00, 174.61, 261.63, 220.00];
+    const base = THEME_BASES[Math.min(this.themeIndex || 0, THEME_BASES.length - 1)];
+    const notes = [base, base * 1.25, base * 1.5]; // root, minor 3rd, perfect 5th
     notes.forEach((freq, i) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      
-      osc.type = 'sine';
+
+      osc.type = i === 0 ? 'sine' : 'triangle';
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.08);
       
       gain.gain.setValueAtTime(0, this.ctx.currentTime + i * 0.08);
