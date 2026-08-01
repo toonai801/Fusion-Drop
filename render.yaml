@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: fusion-drop
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: true
+      - key: ALLOWED_ORIGIN
+        value: https://fusion-drop.onrender.com
+    healthCheckPath: /api/health

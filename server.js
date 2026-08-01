@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const PORT = 8090;
+const PORT = process.env.PORT || 8090;
 const SCORES_FILE = path.join(__dirname, 'scores.json');
 const MAX_BODY_BYTES = 1024;          // Reject POSTs > 1 KB
 const MAX_SCORE = 99999;             // Sanity cap on leaderboard entries
