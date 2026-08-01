@@ -626,6 +626,14 @@ class FusionGame {
         this.endGame();
         return;
       }
+      // Phase B polish-8: low-time pulse. When < 10 s left, briefly tint
+      // the screen-edge with a red warning. Toggle once per ~30 frames
+      // so the visual breathes rather than strobing.
+      if (this.timeLeft / 60 < 10) {
+        this._lowTimePulse = (this._lowTimePulse || 0) + 1;
+      } else {
+        this._lowTimePulse = 0;
+      }
     }
 
     // Update particles
@@ -763,6 +771,21 @@ class FusionGame {
       ctx.font = `bold ${16 * p.scale}px Inter, sans-serif`;
       ctx.textAlign = 'center'; ctx.fillStyle = p.color; ctx.shadowBlur = 10; ctx.shadowColor = p.color;
       ctx.fillText('+' + p.score, p.x, p.y); ctx.restore();
+    }
+
+    // Phase B polish-8: low-time red border pulse (speed mode < 10 s).
+    if (this.state === 'playing' && GAME_MODES[this.mode] && GAME_MODES[this.mode].timeAttack && this.timeLeft / 60 < 10) {
+      const phase = (this._lowTimePulse || 0) % 60;
+      const intensity = phase < 30 ? (phase / 30) : ((60 - phase) / 30);
+      ctx.save();
+      ctx.globalAlpha = 0.18 + intensity * 0.22;
+      ctx.fillStyle = '#ff0066';
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.globalAlpha = 0.6 + intensity * 0.4;
+      ctx.lineWidth = 4 + intensity * 4;
+      ctx.strokeStyle = '#ff0066';
+      ctx.strokeRect(2, 2, this.canvas.width - 4, this.canvas.height - 4);
+      ctx.restore();
     }
 
     // Phase 5 — debug overlay text.

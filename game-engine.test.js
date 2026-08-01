@@ -656,7 +656,7 @@ test('CI workflow runs syntax + unit + e2e + installs Playwright', () => {
   const txt = fs.readFileSync('.github/workflows/ci.yml', 'utf8');
   assert(/test:syntax/.test(txt), 'ci.yml runs test:syntax');
   assert(/test:unit/.test(txt), 'ci.yml runs test:unit');
-  assert(/test:e2e/.test(txt), 'ci.yml runs test:e2e');
+  assert(/playwright test/.test(txt), 'ci.yml runs full playwright test');
   assert(/playwright install/.test(txt), 'ci.yml installs Playwright browsers');
 });
 test('saveScores uses atomic temp + rename', () => {
