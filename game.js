@@ -10,6 +10,24 @@ function hexToRgba(hex, alpha) {
   return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
+// Phase B polish-22: lerp two hex colors in RGB space.
+function lerpHexColor(from, to, t) {
+  const fh = (from || '').replace('#', '');
+  const th = (to || '').replace('#', '');
+  if (fh.length !== 6 || th.length !== 6) return to || from || '#00d4ff';
+  const fr = parseInt(fh.slice(0, 2), 16);
+  const fg = parseInt(fh.slice(2, 4), 16);
+  const fb = parseInt(fh.slice(4, 6), 16);
+  const tr = parseInt(th.slice(0, 2), 16);
+  const tg = parseInt(th.slice(2, 4), 16);
+  const tb = parseInt(th.slice(4, 6), 16);
+  const r = Math.round(fr + (tr - fr) * t);
+  const g = Math.round(fg + (tg - fg) * t);
+  const b = Math.round(fb + (tb - fb) * t);
+  const hex = (n) => n.toString(16).padStart(2, '0');
+  return '#' + hex(r) + hex(g) + hex(b);
+}
+
 const DROP_LINE_Y = 90;
 const MAX_PREVIEW_TIER = 2;
 const GRACE_FRAMES = 180;
@@ -98,6 +116,8 @@ class FusionGame {
     this._longestChain = 0;
     this._chainLength = 0;
     this._lastMergeAt = 0;
+    // Phase B polish-22: theme transition crossfade state.
+    this._themeTransition = null;
 
     // Phase 4 — forward client-side errors to /api/diag. Best-effort, no
     // throw if the network call fails.
@@ -536,8 +556,16 @@ class FusionGame {
 
   advanceLevel() {
     const oldLevel = this.level;
+    const oldThemeColor = (THEMES[Math.min(oldLevel - 1, THEMES.length - 1)] || {}).color || '#00d4ff';
     this.level++;
     this.currentTheme = THEMES[Math.min(this.level - 1, THEMES.length - 1)];
+    // Crossfade the background tint from the old theme color to the new one.
+    this._themeTransition = {
+      from: oldThemeColor,
+      to: this.currentTheme.color,
+      started: Date.now(),
+      duration: 600,
+    };
     if (this.sounds && typeof this.sounds.setThemeIndex === 'function') {
       this.sounds.setThemeIndex(this.level - 1);
     }
@@ -774,10 +802,20 @@ class FusionGame {
 
     // Background: tinted with the current theme's accent color so each
     // level feels distinct. Tint is subtle (15% blend with dark base).
-    const themeColor = (this.currentTheme && this.currentTheme.color) || '#00d4ff';
+    // During a theme transition, blend from old color to new color.
+    let bgTint = (this.currentTheme && this.currentTheme.color) || '#00d4ff';
+    if (this._themeTransition) {
+      const elapsed = Date.now() - this._themeTransition.started;
+      if (elapsed >= this._themeTransition.duration) {
+        this._themeTransition = null;
+      } else {
+        const t = elapsed / this._themeTransition.duration;
+        bgTint = lerpHexColor(this._themeTransition.from, this._themeTransition.to, t);
+      }
+    }
     ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.fillStyle = hexToRgba(themeColor, 0.04);
+    ctx.fillStyle = hexToRgba(bgTint, 0.04);
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Grid
