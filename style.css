@@ -883,21 +883,22 @@ button.secondary:hover {
 }
 .daily-play-btn:hover { background: rgba(255, 215, 0, 0.4); }
 
-/* In-game timer (Speed mode) */
+/* In-game timer (Speed mode) — FD-002: bigger, bolder */
 #speed-timer {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(20, 20, 30, 0.7);
+  background: rgba(20, 20, 30, 0.85);
   color: #00f0ff;
-  border: 1px solid rgba(0, 212, 255, 0.6);
-  border-radius: 6px;
-  padding: 4px 10px;
+  border: 1px solid rgba(0, 212, 255, 0.7);
+  border-radius: 8px;
+  padding: 6px 14px;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   z-index: 5;
   pointer-events: none;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
 }
 #speed-timer.low { color: #ff0066; border-color: rgba(255, 0, 102, 0.8); }
 #speed-timer.hidden { display: none; }
