@@ -91,7 +91,7 @@ class FusionGame {
     this.resize();
     window.addEventListener('resize', () => this.resize());
 
-    this.physics = new Physics(0.3, 0.98, 0.2);
+    this.physics = new Physics(0.35, 0.96, 0.25);  // FD-002: snappier gravity + restitution
     this.entities = [];
     this.score = 0;
     this.highScore = 0;
