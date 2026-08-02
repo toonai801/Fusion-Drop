@@ -621,9 +621,9 @@ class FusionGame {
       const a = this.entities[i];
       if (!a.active) continue;
 
-      // Spawn animation
+      // Spawn animation — FD-002: bigger jump, slightly slower ramp for Suika feel.
       if (a.spawnScale < a.targetScale) {
-        a.spawnScale = Math.min(a.spawnScale + 0.08, a.targetScale);
+        a.spawnScale = Math.min(a.spawnScale + 0.12, a.targetScale);
       }
 
       // Decrement immunity timer
