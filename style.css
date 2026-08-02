@@ -458,10 +458,9 @@ body {
     order: 2;
   }
 
-  /* Hide leaderboard list and chain by default on mobile; show via toggle. */
+  /* Hide leaderboard list by default on mobile; show via toggle. */
   #mobile-lb-row .lb-content { display: none; }
   #mobile-lb-row.open .lb-content { display: block; max-height: 50vh; overflow-y: auto; }
-  #mobile-chain { display: none; }
 
   #mobile-info-row {
     display: flex;
@@ -594,7 +593,7 @@ body {
   }
 
   #mobile-chain {
-    display: flex;
+    display: none; /* FD-002: hide chain by default on mobile to save vertical space */
     flex-direction: column;
     align-items: center;
     gap: 4px;
