@@ -1003,7 +1003,11 @@ class FusionGame {
 
     // Ambient
     for (const p of this.ambientParticles) {
-      ctx.save(); ctx.globalAlpha = p.alpha * (0.5 + 0.5 * Math.sin(p.time * 2));
+      // FD-002: glow halo around each ambient particle for sparkle effect.
+      ctx.save();
+      ctx.globalAlpha = p.alpha * (0.5 + 0.5 * Math.sin(p.time * 2));
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = p.color;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fillStyle = p.color; ctx.fill(); ctx.restore();
     }
