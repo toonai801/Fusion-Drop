@@ -73,6 +73,35 @@ function drawShape(ctx, x, y, shapeType, scale = 1, shapes = null, themeId = nul
 }
 
 function drawDecor(ctx, s, r, tier) {
+  // FD-002: small leaf at the top of strawberry (tier 1) so it doesn't look like a generic red blob.
+  if (tier === 1) {
+    ctx.fillStyle = '#3aa83a';
+    ctx.beginPath();
+    ctx.ellipse(0, -r * 0.9, r * 0.3, r * 0.08, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    // tiny stem
+    ctx.strokeStyle = '#2a2';
+    ctx.lineWidth = Math.max(1.5, r * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.95);
+    ctx.lineTo(0, -r * 1.15);
+    ctx.stroke();
+  } else if (tier === 4) {
+    // Lemon: tiny tip
+    ctx.fillStyle = '#9aa820';
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.95);
+    ctx.lineTo(r * 0.1, -r * 1.15);
+    ctx.lineTo(-r * 0.1, -r * 1.15);
+    ctx.closePath();
+    ctx.fill();
+  } else if (tier === 8) {
+    // Pineapple-ish accent for tier 8 (still feels distinct)
+    ctx.fillStyle = '#a37c2a';
+    ctx.beginPath();
+    ctx.ellipse(0, -r * 0.9, r * 0.18, r * 0.06, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
   if (tier === 0) {
     // Cherry: little stem
     ctx.strokeStyle = '#4a2';
