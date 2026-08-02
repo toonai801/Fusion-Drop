@@ -29,6 +29,8 @@ function lerpHexColor(from, to, t) {
 }
 
 const DROP_LINE_Y = 90;
+// FD-002: max tier for direct spawn. Bigger shapes are only via merge.
+// Suika allows tier 0-4 spawn. Keep at 2 for tight feel.
 const MAX_PREVIEW_TIER = 2;
 // FD-002: grace frames — how long an entity can sit above the death line
 // before triggering game-over. 180 was too forgiving. Suika is ~90.
