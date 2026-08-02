@@ -90,7 +90,9 @@ class SoundManager {
     osc.type = timbre.wave;
     osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, this.ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    // FD-002: louder merge (was 0.25) so high-tier merges are satisfying.
+    const gainBase = 0.18 + tier * 0.04;
+    gain.gain.setValueAtTime(gainBase, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + timbre.decay);
     osc.connect(gain);
     gain.connect(this.masterGain);
