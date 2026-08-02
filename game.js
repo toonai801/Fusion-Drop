@@ -1077,8 +1077,8 @@ class FusionGame {
   }
 
   addScorePopup(x, y, score) {
-    const colors = ['#00f0ff', '#00d4ff', '#ffd700', '#ff0066'];
-    this.scorePopups.push({ x, y, score, life: 1.0, scale: 1, color: colors[Math.floor(Math.random() * colors.length)] });
+    // FD-002: gold tint for any merge popup, bigger baseline scale, longer life.
+    this.scorePopups.push({ x, y, score, life: 1.2, scale: 1.4, color: '#ffd700' });
   }
 
   addMergeFlash(x, y) {
