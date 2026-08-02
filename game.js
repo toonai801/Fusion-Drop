@@ -494,7 +494,8 @@ class FusionGame {
     }
     try {
       const scores = await backend.fetchScores();
-      this.leaderboard = scores.map(s => ({ name: s.player_name, score: s.score, date: s.created_at }));
+      // FD-002: server returns {name, score, level, date} — was reading player_name.
+      this.leaderboard = scores.map(s => ({ name: s.name, score: s.score, date: s.date }));
       this.renderLeaderboard();
     } catch (e) {
       console.error('Leaderboard fetch failed:', e);
