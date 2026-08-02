@@ -434,6 +434,9 @@ body {
     min-height: 200px;
     max-width: 100%;
     order: 1;
+    /* FD-002: hide canvas-side overflow so floor overlap can never
+       visually clip into the bottom panel on small phones. */
+    overflow: hidden;
   }
 
   #game-canvas {
