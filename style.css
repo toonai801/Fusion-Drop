@@ -121,12 +121,14 @@ body {
 }
 
 #leaderboard-panel {
-  background: rgba(20, 20, 35, 0.8);
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  background: rgba(20, 20, 35, 0.85);
+  border: 1px solid rgba(0, 212, 255, 0.35);
   border-radius: 12px;
   padding: 12px;
-  max-height: 250px;
+  max-height: 300px;
   overflow-y: auto;
+  /* FD-002: subtle inner glow so the panel feels alive. */
+  box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.06);
 }
 
 .lb-title {
