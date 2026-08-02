@@ -23,6 +23,7 @@ class SoundManager {
   playDrop() {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
+    if (this.enabled === false) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -61,6 +62,8 @@ class SoundManager {
   playMerge(tier) {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
+    // FD-002: respect sound toggle.
+    if (this.enabled === false) return;
 
     // Phase 5 — theme-driven timbre. Each theme maps to a (waveform,
     // base offset) so merging 'prism' in Fusion sounds different from
@@ -112,6 +115,7 @@ class SoundManager {
   playLevelComplete() {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
+    if (this.enabled === false) return;
 
     // Phase B polish-19: theme-keyed chord.
     const THEME_BASES = [261.63, 220.00, 246.94, 261.63, 196.00, 246.94, 261.63, 220.00, 174.61, 261.63, 220.00];
@@ -136,12 +140,13 @@ class SoundManager {
     });
   }
 
-  // Phase B polish-24: 3-note descending minor chord on game over.
+  // Phase B polish-24 + FD-002: 3-note descending minor chord on game over.
   // Was a single sawtooth sweep; now a 4th-octave -> 3rd-octave -> 2nd-octave
   // minor-third descent for more impact.
   playGameOver() {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
+    if (this.enabled === false) return;
 
     const notes = [349.23, 311.13, 261.63]; // F4 -> Eb4 -> C4 (descending minor)
     notes.forEach((freq, i) => {
