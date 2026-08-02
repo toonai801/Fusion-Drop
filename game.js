@@ -89,6 +89,13 @@ class FusionGame {
     this.entities = [];
     this.score = 0;
     this.highScore = 0;
+    // FD-002: load personal best from localStorage at init (per-mode bests
+    // were already tracked; this is the all-modes top).
+    try {
+      const all = ['classic', 'zen', 'speed']
+        .map(m => parseInt(localStorage.getItem('fusion_drop_pb_' + m) || '0', 10) || 0);
+      this.highScore = Math.max(0, ...all);
+    } catch (_) {}
     this.level = 1;
     this.currentTheme = THEMES[0];
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
