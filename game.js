@@ -1146,6 +1146,13 @@ class FusionGame {
     tryGrant('merges_50',   () => this.mergesCount >= 50);
     tryGrant('score_500',   () => this.score >= 500);
     tryGrant('score_2000',  () => this.score >= 2000);
+    tryGrant('score_5000',  () => this.score >= 5000);
+    tryGrant('chain_5',     () => (this._longestChain || 0) >= 5);
+    tryGrant('watermelon',  () => {
+      const shapes = this.getShapes();
+      const maxTier = shapes.length - 1;
+      return this.entities.some(e => e.active && e.shapeType === maxTier);
+    });
     tryGrant('first_max',   () => {
       const shapes = this.getShapes();
       return this.entities.some(e => e.active && e.shapeType === shapes.length - 1);
