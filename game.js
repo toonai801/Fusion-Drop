@@ -931,13 +931,17 @@ class FusionGame {
       grad.addColorStop(0, 'rgba(0, 240, 255, 0.6)');
       grad.addColorStop(1, 'rgba(0, 212, 255, 0.05)');
       ctx.strokeStyle = grad;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.stroke();
       ctx.setLineDash([]);
       // Aim dot at the drop point for clarity.
       ctx.beginPath();
-      ctx.arc(this.dropX, aimY + s.radius + 4, 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.8)';
+      ctx.arc(this.dropX, aimY + s.radius + 4, 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       ctx.fill();
     }
 
