@@ -491,8 +491,10 @@ body {
     flex-shrink: 0;
   }
 
+  /* FD-002: give score-board a min-width so the score number has room */
   #mobile-info-row #score-board {
     flex: 1;
+    min-width: 0;
     padding: 6px;
     display: flex;
     flex-direction: column;
