@@ -453,10 +453,15 @@ body {
     background: rgba(20, 20, 35, 0.9);
     border-top: 1px solid rgba(0, 212, 255, 0.3);
     flex-shrink: 0;
-    max-height: 16vh;
+    max-height: 14vh;
     overflow-y: auto;
     order: 2;
   }
+
+  /* Hide leaderboard list and chain by default on mobile; show via toggle. */
+  #mobile-lb-row .lb-content { display: none; }
+  #mobile-lb-row.open .lb-content { display: block; max-height: 50vh; overflow-y: auto; }
+  #mobile-chain { display: none; }
 
   #mobile-info-row {
     display: flex;
