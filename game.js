@@ -848,8 +848,9 @@ class FusionGame {
     }
 
     for (const p of this.ambientParticles) {
-      p.y -= p.speed; p.x += Math.sin(p.time) * 0.5; p.time += 0.02;
-      if (p.y < 0) { p.y = this.canvas.height + 10; p.x = Math.random() * this.canvas.width; }
+      // FD-002: upward drift + horizontal sway, looks like dust in sunlight.
+      p.y -= p.speed; p.x += Math.sin(p.time) * 0.6; p.time += 0.025;
+      if (p.y < -10) { p.y = this.canvas.height + 10; p.x = Math.random() * this.canvas.width; }
     }
   }
 
