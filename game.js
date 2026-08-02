@@ -767,6 +767,18 @@ class FusionGame {
     if (!lastDropped) {
       // All entities have settled enough - allow next drop
       this.dropTimer = 0;
+    } else {
+      this.dropTimer = 0; // lastDropped still in flight, hold timer
+    }
+
+    // FD-002: auto-drop after ~70 frames of inactivity if no entity is
+    // mid-flight. Standard Suika behavior — the next fruit falls on its
+    // own if the player doesn't tap.
+    if (!lastDropped) {
+      this.dropTimer = (this.dropTimer || 0) + 1;
+      if (this.dropTimer >= 70) {
+        this.drop();
+      }
     }
 
     // Phase 2 — Speed mode time-attack countdown.
