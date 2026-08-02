@@ -60,10 +60,15 @@ function drawShape(ctx, x, y, shapeType, scale = 1, shapes = null, themeId = nul
   ctx.arc(0, 0, r, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Highlight dot
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+  // Highlight dot — FD-002: brighter, slightly bigger.
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
   ctx.beginPath();
-  ctx.arc(-r * 0.35, -r * 0.4, r * 0.18, 0, Math.PI * 2);
+  ctx.arc(-r * 0.32, -r * 0.38, r * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  // Secondary smaller highlight for more depth.
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.beginPath();
+  ctx.arc(-r * 0.5, -r * 0.15, r * 0.08, 0, Math.PI * 2);
   ctx.fill();
 
   // Per-tier decorative touch: leaf on apple/pear/peach/watermelon, stem on cherry/etc.
