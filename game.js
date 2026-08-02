@@ -30,7 +30,9 @@ function lerpHexColor(from, to, t) {
 
 const DROP_LINE_Y = 90;
 const MAX_PREVIEW_TIER = 2;
-const GRACE_FRAMES = 180;
+// FD-002: grace frames — how long an entity can sit above the death line
+// before triggering game-over. 180 was too forgiving. Suika is ~90.
+const GRACE_FRAMES = 90;
 
 // Phase 2 — game modes.
 //  'classic' = standard Suika: death line ends the run.
