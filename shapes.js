@@ -78,6 +78,29 @@ function drawShape(ctx, x, y, shapeType, scale = 1, shapes = null, themeId = nul
 }
 
 function drawDecor(ctx, s, r, tier) {
+  // FD-002: tier 2 (grape) - subtle cluster dots for texture.
+  if (tier === 2) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    for (let i = 0; i < 3; i++) {
+      const ang = (i / 3) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(Math.cos(ang) * r * 0.35, Math.sin(ang) * r * 0.35, r * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#2a1a3a';
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.85);
+    ctx.lineTo(r * 0.06, -r * 1.05);
+    ctx.lineTo(-r * 0.06, -r * 1.05);
+    ctx.closePath();
+    ctx.fill();
+  } else if (tier === 3) {
+    // Orange: tiny leaf
+    ctx.fillStyle = '#3aa83a';
+    ctx.beginPath();
+    ctx.ellipse(r * 0.2, -r * 0.85, r * 0.18, r * 0.07, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
   // FD-002: small leaf at the top of strawberry (tier 1) so it doesn't look like a generic red blob.
   if (tier === 1) {
     ctx.fillStyle = '#3aa83a';
