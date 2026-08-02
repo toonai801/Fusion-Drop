@@ -439,6 +439,16 @@ class FusionGame {
     document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
     // Phase B polish-26: Main Menu button on game-over -> back to intro without saving.
     document.getElementById('btn-main-menu').addEventListener('click', () => this.returnToIntro());
+    const soundBtnGO = document.getElementById('btn-toggle-sound-gameover');
+    if (soundBtnGO) {
+      const refresh = () => { soundBtnGO.textContent = (this.sounds && this.sounds.enabled !== false) ? '🔊 Sound On' : '🔇 Sound Off'; };
+      refresh();
+      soundBtnGO.addEventListener('click', () => {
+        const cur = this.sounds && this.sounds.enabled !== false;
+        this.setSoundEnabled(!cur);
+        refresh();
+      });
+    }
     document.getElementById('btn-resume').addEventListener('click', () => this.togglePause());
     const btnRestartPause = document.getElementById('btn-restart-from-pause');
     if (btnRestartPause) btnRestartPause.addEventListener('click', () => this.restart());
