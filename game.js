@@ -689,13 +689,14 @@ class FusionGame {
       const newS = shapes[newType];
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
 
-      // Merge particles
-      for (let p = 0; p < 12; p++) {
-        const angle = (p / 12) * Math.PI * 2;
+      // FD-002: merge particles — denser burst, slightly faster velocities for impact.
+      const count = newType >= 5 ? 22 : 14;
+      for (let p = 0; p < count; p++) {
+        const angle = (p / count) * Math.PI * 2;
         this.mergeParticles.push({ x: mx, y: my,
-          vx: Math.cos(angle) * (2 + Math.random() * 3),
-          vy: Math.sin(angle) * (2 + Math.random() * 3),
-          life: 1.0, color: newS.glow, size: 3 + Math.random() * 4,
+          vx: Math.cos(angle) * (3 + Math.random() * 4),
+          vy: Math.sin(angle) * (3 + Math.random() * 4),
+          life: 1.0, color: newS.glow, size: 4 + Math.random() * 5,
         });
       }
 
