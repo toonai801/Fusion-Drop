@@ -679,6 +679,9 @@ body {
     font-size: 14px;
   }
 
+  /* FD-002: intro screen body text size for readability on phone. */
+  .intro-content ol { font-size: 12px; line-height: 1.7; }
+
   .intro-content ol {
     font-size: 12px;
     line-height: 1.6;
