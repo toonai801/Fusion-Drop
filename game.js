@@ -609,7 +609,12 @@ class FusionGame {
     this.physics = new Physics(0.3 * this.getPhysicsSpeed(), 0.98, 0.2);
     this.sounds.playLevelComplete();
     this.renderShapeChain();
-    this.addScorePopup(this.canvas.width / 2, this.canvas.height / 2, 'LEVEL ' + this.level + '!');
+    // FD-002: bigger, brighter level-up banner.
+    this.scorePopups = this.scorePopups || [];
+    this.scorePopups.push({
+      x: this.canvas.width / 2, y: this.canvas.height / 2,
+      score: 'LEVEL ' + this.level, life: 2.0, scale: 2.4, color: '#ffd700', big: true,
+    });
   }
 
   update() {
