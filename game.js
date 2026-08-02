@@ -748,6 +748,9 @@ class FusionGame {
       this.addMergeFlash(mx, my);
       this.sounds.playMerge(newType);
       this.mergesCount++;
+      // FD-002: subtle shake on every merge (existing logic shakes only
+      // the biggest tier — extend to all merges for tactile feedback).
+      if (newType >= 3 && !this.reducedMotion) this.triggerScreenShake();
       // Phase B polish-20: track chain length. A chain is multiple
       // merges that happen within a short time window (~2 s) of each
       // other. Reset chain on long gap.
