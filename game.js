@@ -44,6 +44,24 @@ const GAME_MODES = {
 };
 const DEFAULT_MODE = 'classic';
 
+// FD-002: unified shapes across themes. Return SHAPES regardless of level.
+// Level progression is now expressed through currentTheme (background), not
+// shape set changes.
+function getCurrentShapes(_level) { return SHAPES; }
+function getShapeCount(_level) { return SHAPES.length; }
+function getPhysicsSpeed(level) {
+  // Subtle acceleration as the level rises.
+  return 1.0 + (level - 1) * 0.05;
+}
+function getDeathLineOffset(level) {
+  // Death line moves down a few pixels per level to add pressure.
+  return (level - 1) * 8;
+}
+// FD-002: with unified shapes, transforming an entity between themes is a no-op.
+function transformEntityToTheme(entity, _oldLevel, _newLevel) {
+  return { shapeType: entity.shapeType, radius: entity.radius };
+}
+
 // Phase 2 — milestone achievements. id -> { label, description }.
 const ACHIEVEMENTS = {
   first_merge: { label: 'First Merge', description: 'Drop, collide, merge!' },

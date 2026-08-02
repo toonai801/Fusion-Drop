@@ -182,10 +182,10 @@ test('game.js loads', () => assert(typeof FusionGame === 'function'));
 
 // TEST 2: Theme Data
 console.log('\n🎨 THEME DATA');
-test('Theme 1 has 7 shapes', () => assertEqual(getCurrentShapes(1).length, 7));
-test('Theme 2 has 8 shapes', () => assertEqual(getCurrentShapes(2).length, 8));
-test('Theme 11 has 13 shapes', () => assertEqual(getCurrentShapes(11).length, 13));
-test('getShapeCount works', () => assertEqual(getShapeCount(1), 7));
+test('Theme 1 has 11 shapes (unified set)', () => assertEqual(getCurrentShapes(1).length, 11));
+test('Theme 2 has 11 shapes (unified set)', () => assertEqual(getCurrentShapes(2).length, 11));
+test('Theme 11 has 11 shapes (unified set)', () => assertEqual(getCurrentShapes(11).length, 11));
+test('getShapeCount works', () => assertEqual(getShapeCount(1), 11));
 test('Physics speed increases with level', () => assert(getPhysicsSpeed(2) > getPhysicsSpeed(1)));
 test('Death line offset increases with level', () => assert(getDeathLineOffset(2) > getDeathLineOffset(1)));
 
@@ -195,7 +195,10 @@ const mockCtx = {
   save: () => {}, restore: () => {}, translate: () => {},
   beginPath: () => {}, arc: () => {}, fill: () => {},
   shadowBlur: 0, shadowColor: '', fillStyle: '', lineWidth: 0, stroke: () => {},
-  moveTo: () => {}, lineTo: () => {}, closePath: () => {}, strokeStyle: '', setLineDash: () => {}, roundRect: () => {}
+  moveTo: () => {}, lineTo: () => {}, closePath: () => {}, strokeStyle: '', setLineDash: () => {}, roundRect: () => {},
+  createRadialGradient: () => ({ addColorStop: () => {} }),
+  ellipse: () => {},
+  fillText: () => {}, font: '', textAlign: '',
 };
 test('drawShape with theme data works', () => drawShape(mockCtx, 0, 0, 0, 1, getCurrentShapes(1)));
 test('drawShape falls back to SHAPES', () => drawShape(mockCtx, 0, 0, 0, 1));
