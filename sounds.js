@@ -204,6 +204,7 @@ class SoundManager {
   startAmbient() {
     if (!this.initialized) this.init();
     if (!this.ctx || this.ambientOsc) return;
+    if (this.enabled === false) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
