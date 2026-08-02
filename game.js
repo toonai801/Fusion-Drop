@@ -1079,11 +1079,13 @@ class FusionGame {
   }
 
   initAmbientParticles() {
-    for (let i = 0; i < 20; i++) {
+    // FD-002: more particles, slightly bigger, theme-tinted.
+    const tints = ['rgba(0, 212, 255, 0.4)', 'rgba(0, 240, 255, 0.3)', 'rgba(255, 215, 0, 0.2)'];
+    for (let i = 0; i < 35; i++) {
       this.ambientParticles.push({
         x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height,
-        size: 1 + Math.random() * 2, speed: 0.2 + Math.random() * 0.5,
-        color: ['rgba(0, 212, 255, 0.3)', 'rgba(0, 240, 255, 0.2)', 'rgba(255, 0, 102, 0.15)'][Math.floor(Math.random() * 3)],
+        size: 1.5 + Math.random() * 2.5, speed: 0.2 + Math.random() * 0.5,
+        color: tints[Math.floor(Math.random() * tints.length)],
         alpha: 0.3 + Math.random() * 0.4, time: Math.random() * Math.PI * 2,
       });
     }
