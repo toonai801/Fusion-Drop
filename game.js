@@ -761,20 +761,15 @@ class FusionGame {
     this._dangerLevel = highestAbove === -Infinity ? 0 : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / 100));
     this.renderSpeedTimer();
 
-    // Wait for last dropped entity to land before allowing next drop
-    // A dropped entity is the one still within its initial immune period
-    const lastDropped = this.entities.find(e => e.immuneTimer > 0);
-    if (!lastDropped) {
-      // All entities have settled enough - allow next drop
-      this.dropTimer = 0;
-    } else {
-      this.dropTimer = 0; // lastDropped still in flight, hold timer
-    }
-
     // FD-002: auto-drop after ~70 frames of inactivity if no entity is
     // mid-flight. Standard Suika behavior — the next fruit falls on its
     // own if the player doesn't tap.
-    if (!lastDropped) {
+    const lastDropped = this.entities.find(e => e.immuneTimer > 0);
+    if (lastDropped) {
+      // Mid-flight entity still settling — reset the auto-drop clock so
+      // we don't fire the moment it lands.
+      this.dropTimer = 0;
+    } else {
       this.dropTimer = (this.dropTimer || 0) + 1;
       if (this.dropTimer >= 70) {
         this.drop();
