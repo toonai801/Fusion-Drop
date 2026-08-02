@@ -113,6 +113,9 @@ body {
   padding: 10px 14px;
   cursor: pointer;
   transition: all 0.2s;
+  /* FD-002: bigger tap target for mobile */
+  min-width: 44px;
+  min-height: 44px;
 }
 
 #controls button:hover, #controls-desk button:hover {
