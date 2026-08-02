@@ -998,10 +998,16 @@ class FusionGame {
 
     // Score popups
     for (const p of this.scorePopups) {
-      ctx.save(); ctx.globalAlpha = p.life;
-      ctx.font = `bold ${16 * p.scale}px Inter, sans-serif`;
-      ctx.textAlign = 'center'; ctx.fillStyle = p.color; ctx.shadowBlur = 10; ctx.shadowColor = p.color;
-      ctx.fillText('+' + p.score, p.x, p.y); ctx.restore();
+      ctx.save(); ctx.globalAlpha = Math.min(1, p.life);
+      const size = p.big ? 28 : 16;
+      ctx.font = `bold ${Math.round(size * p.scale)}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = p.color;
+      ctx.shadowBlur = p.big ? 20 : 10;
+      ctx.shadowColor = p.color;
+      const text = p.big ? String(p.score) : '+' + p.score;
+      ctx.fillText(text, p.x, p.y);
+      ctx.restore();
     }
 
     // Phase B polish-8: low-time red border pulse (speed mode < 10 s).
