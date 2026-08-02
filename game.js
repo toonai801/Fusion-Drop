@@ -161,6 +161,9 @@ class FusionGame {
   getDeathLine() { return DROP_LINE_Y + getDeathLineOffset(this.level); }
 
   randomShapeTier(maxTier) {
+    // FD-002: use pickSpawnTier from shapes.js if available (real Suika weights).
+    if (typeof pickSpawnTier === 'function') return pickSpawnTier();
+    // Fallback: exponential decay if shapes.js didn't load.
     const weights = [];
     for (let i = 0; i <= maxTier; i++) weights.push(Math.pow(0.55, i));
     const total = weights.reduce((a, b) => a + b, 0);
