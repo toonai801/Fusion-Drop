@@ -172,6 +172,7 @@ class SoundManager {
   playWarning(intensity = 1) {
     if (!this.initialized) this.init();
     if (!this.ctx) return;
+    if (this.enabled === false) return;
     if (!this._warningGain) {
       this._warningOsc = this.ctx.createOscillator();
       this._warningOsc2 = this.ctx.createOscillator();
