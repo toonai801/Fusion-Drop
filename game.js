@@ -70,6 +70,10 @@ const ACHIEVEMENTS = {
   score_500:   { label: 'Half K',       description: 'Score 500' },
   score_2000:  { label: 'Two Big',      description: 'Score 2000' },
   first_max:   { label: 'Apex',         description: 'Spawn the largest tier' },
+  // FD-002: a few more meaningful achievements.
+  score_5000:  { label: 'High Roller',  description: 'Score 5000' },
+  chain_5:     { label: 'Combo',        description: '5 merges in a chain' },
+  watermelon:  { label: 'Big Fruit',    description: 'Made a watermelon' },
 };
 const DROP_DELAY = 30;
 
