@@ -444,16 +444,16 @@ body {
     display: block;
   }
 
-  /* Bottom panel sits at bottom */
+  /* FD-002: Bottom panel — minimal on mobile so the canvas dominates. */
   #bottom-panel {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 6px 8px;
+    padding: 4px 8px;
     background: rgba(20, 20, 35, 0.9);
     border-top: 1px solid rgba(0, 212, 255, 0.3);
     flex-shrink: 0;
-    max-height: 38vh;
+    max-height: 16vh;
     overflow-y: auto;
     order: 2;
   }
