@@ -731,6 +731,14 @@ class FusionGame {
       if (!this._longestChain || this._chainLength > this._longestChain) {
         this._longestChain = this._chainLength;
       }
+      // FD-002: chain bonus — extra score for sustained merges.
+      // Reward players for setting up cascading merges (real Suika feel).
+      if (this._chainLength >= 3) {
+        const chainBonus = (this._chainLength - 2) * 3;
+        this.score += chainBonus;
+        this.updateScoreDisplay();
+        this.addScorePopup(mx, my - 60, chainBonus);
+      }
       this.checkAchievements();
     }
 
