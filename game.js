@@ -853,9 +853,14 @@ class FusionGame {
         bgTint = lerpHexColor(this._themeTransition.from, this._themeTransition.to, t);
       }
     }
-    ctx.fillStyle = '#0d1117';
+    // FD-002: vertical gradient background — dark at top, slightly lighter at
+    // bottom of the canvas so the player's eye is drawn to the play area.
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+    bgGrad.addColorStop(0, '#0a0d12');
+    bgGrad.addColorStop(1, '#141a22');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.fillStyle = hexToRgba(bgTint, 0.04);
+    ctx.fillStyle = hexToRgba(bgTint, 0.06);
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Grid
