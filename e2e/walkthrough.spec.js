@@ -52,7 +52,9 @@ test.describe('Fusion Drop full walkthrough (smoke)', () => {
         const evt = new MouseEvent('click', { clientX: x, clientY: rect.top + 30, bubbles: true });
         cv.dispatchEvent(evt);
       }, i);
-      await page.waitForTimeout(400);
+      await expect.poll(() => page.evaluate(() =>
+        window.game.entities.every(e => !e.active || e.immuneTimer <= 0)
+      )).toBe(true);
     }
     const drops = await page.evaluate(() => window.game.dropsCount);
     expect(drops).toBe(8);
