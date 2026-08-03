@@ -808,20 +808,8 @@ class FusionGame {
     this._dangerLevel = highestAbove === -Infinity ? 0 : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / 100));
     this.renderSpeedTimer();
 
-    // FD-002: auto-drop after ~70 frames of inactivity if no entity is
-    // mid-flight. Standard Suika behavior — the next fruit falls on its
-    // own if the player doesn't tap.
-    const lastDropped = this.entities.find(e => e.immuneTimer > 0);
-    if (lastDropped) {
-      // Mid-flight entity still settling — reset the auto-drop clock so
-      // we don't fire the moment it lands.
-      this.dropTimer = 0;
-    } else {
-      this.dropTimer = (this.dropTimer || 0) + 1;
-      if (this.dropTimer >= 70) {
-        this.drop();
-      }
-    }
+    // Player control is absolute: update() must never create a piece. Drops
+    // only originate from an explicit pointer, touch, or keyboard action.
 
     // Phase 2 — Speed mode time-attack countdown.
     if (this.state === 'playing' && GAME_MODES[this.mode] && GAME_MODES[this.mode].timeAttack) {

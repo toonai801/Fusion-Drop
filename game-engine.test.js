@@ -249,6 +249,14 @@ test('Drop creates entity in playing state', () => {
   game.drop();
   assert(game.entities.length === initialCount + 1, 'Should create one entity');
 });
+test('Idle updates never drop a shape without player input', () => {
+  const game = new FusionGame();
+  game.state = 'playing';
+  const initialCount = game.entities.length;
+  for (let i = 0; i < 600; i++) game.update();
+  assertEqual(game.entities.length, initialCount);
+  assertEqual(game.dropsCount, 0);
+});
 test('Drop is blocked in intro state', () => {
   const game = new FusionGame();
   game.state = 'intro';

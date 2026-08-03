@@ -72,6 +72,19 @@ test.describe('Fusion Drop E2E', () => {
       await expect(page.locator('#game-canvas')).toBeVisible();
     });
 
+    test('idle gameplay never auto-drops a shape', async ({ page }) => {
+      await page.goto(ENTRY_URL);
+      await page.click('#btn-intro-start');
+      await page.click('#btn-start');
+      await expect.poll(() => page.evaluate(() => window.game.state)).toBe('playing');
+      await page.waitForTimeout(3500);
+      const idle = await page.evaluate(() => ({
+        entities: window.game.entities.length,
+        drops: window.game.dropsCount,
+      }));
+      expect(idle).toEqual({ entities: 0, drops: 0 });
+    });
+
     test('mouse movement shows aiming indicator', async ({ page }) => {
       await page.goto(ENTRY_URL);
       await page.click('#btn-intro-start');
