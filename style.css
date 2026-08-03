@@ -978,7 +978,7 @@ button,input{font:inherit} button:focus-visible,input:focus-visible,a:focus-visi
    a playfield with a status dock, not the desktop dashboard compressed. */
 @media (min-width: 701px) {
   #game-wrapper {
-    grid-template-columns: minmax(440px, 520px) 260px;
+    grid-template-columns: min(520px, calc((100dvh - 48px) * .6667)) 260px;
     grid-template-areas: "board deck";
     gap: clamp(24px, 4vw, 52px);
     padding: 24px;
@@ -1018,7 +1018,7 @@ button,input{font:inherit} button:focus-visible,input:focus-visible,a:focus-visi
 }
 
 @media (min-width: 701px) and (max-width: 860px) {
-  #game-wrapper { grid-template-columns: minmax(390px, 460px) 220px; gap: 18px; }
+  #game-wrapper { grid-template-columns: min(460px, calc((100dvh - 48px) * .6667)) 220px; gap: 18px; }
   #left-panel { width: 220px; }
   #score-desk { font-size: 46px; }
   #next-fruit-desk { grid-template-columns: 58px 1fr; }
