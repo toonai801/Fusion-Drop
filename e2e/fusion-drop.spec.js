@@ -72,6 +72,41 @@ test.describe('Fusion Drop E2E', () => {
       await expect(page.locator('#game-canvas')).toBeVisible();
     });
 
+    test('idle gameplay never auto-drops a shape', async ({ page }) => {
+      await page.goto(ENTRY_URL);
+      await page.click('#btn-intro-start');
+      await page.click('#btn-start');
+      await expect.poll(() => page.evaluate(() => window.game.state)).toBe('playing');
+      await page.waitForTimeout(3500);
+      const idle = await page.evaluate(() => ({
+        entities: window.game.entities.length,
+        drops: window.game.dropsCount,
+      }));
+      expect(idle).toEqual({ entities: 0, drops: 0 });
+    });
+
+    test('rapid duplicate input creates only one piece', async ({ page }) => {
+      await page.goto(ENTRY_URL);
+      await page.click('#btn-intro-start');
+      await page.click('#btn-start');
+      await page.evaluate(() => {
+        const canvas = window.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const makeClick = () => new MouseEvent('click', {
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + 80,
+          bubbles: true,
+        });
+        canvas.dispatchEvent(makeClick());
+        canvas.dispatchEvent(makeClick());
+      });
+      const result = await page.evaluate(() => ({
+        entities: window.game.entities.length,
+        drops: window.game.dropsCount,
+      }));
+      expect(result).toEqual({ entities: 1, drops: 1 });
+    });
+
     test('mouse movement shows aiming indicator', async ({ page }) => {
       await page.goto(ENTRY_URL);
       await page.click('#btn-intro-start');
@@ -129,22 +164,22 @@ test.describe('Fusion Drop E2E', () => {
         const g = window.game;
         const s = g.getShapes()[0];
         g.entities.push({
-          x: g.canvas.width / 2 - s.radius,
+          x: g.canvas.width / 2 - s.radius * 0.5,
           y: g.canvas.height - s.radius - 20,
           vx: 0, vy: 0,
           radius: s.radius, shapeType: 0,
           active: true, settleTimer: 0,
           spawnScale: 1, targetScale: 1, justDropped: false,
-          hasBeenBelowLine: true,
+          hasBeenBelowLine: true, immuneTimer: 0,
         });
         g.entities.push({
-          x: g.canvas.width / 2 + s.radius,
+          x: g.canvas.width / 2 + s.radius * 0.5,
           y: g.canvas.height - s.radius - 20,
           vx: 0, vy: 0,
           radius: s.radius, shapeType: 0,
           active: true, settleTimer: 0,
           spawnScale: 1, targetScale: 1, justDropped: false,
-          hasBeenBelowLine: true,
+          hasBeenBelowLine: true, immuneTimer: 0,
         });
       });
       const before = await page.evaluate(() => window.game.entities.length);
@@ -269,13 +304,22 @@ test.describe('Fusion Drop E2E', () => {
       expect(score).toBe(0);
     });
 
-    test('desktop layout shows at 1024×768', async ({ page }) => {
+    test('desktop cabinet layout shows at 1024×768', async ({ page }) => {
       await page.goto(ENTRY_URL);
       await page.waitForSelector('#game-wrapper', { timeout: 10000 });
       const left = page.locator('#left-panel');
       await expect(left).toBeVisible();
       const right = page.locator('#right-panel');
-      await expect(right).toBeVisible();
+      await expect(right).not.toBeVisible();
+      const fit = await page.evaluate(() => {
+        const board = document.querySelector('#game-area').getBoundingClientRect();
+        return {
+          noPageScroll: document.body.scrollWidth <= innerWidth && document.body.scrollHeight <= innerHeight,
+          boardVisible: board.top >= 0 && board.left >= 0 && board.right <= innerWidth && board.bottom <= innerHeight,
+        };
+      });
+      expect(fit.noPageScroll).toBe(true);
+      expect(fit.boardVisible).toBe(true);
     });
   });
 
@@ -294,6 +338,20 @@ test.describe('Fusion Drop E2E', () => {
       await expect(left).not.toBeVisible();
       const right = page.locator('#right-panel');
       await expect(right).not.toBeVisible();
+      const fit = await page.evaluate(() => {
+        const board = document.querySelector('#game-area').getBoundingClientRect();
+        const hud = document.querySelector('#bottom-panel').getBoundingClientRect();
+        return {
+          noPageScroll: document.body.scrollWidth <= innerWidth && document.body.scrollHeight <= innerHeight,
+          boardVisible: board.top >= 0 && board.left >= 0 && board.right <= innerWidth && board.bottom <= innerHeight,
+          hudAboveBoard: hud.bottom <= board.top,
+          usefulBoard: board.height >= innerHeight * 0.7,
+        };
+      });
+      expect(fit.noPageScroll).toBe(true);
+      expect(fit.boardVisible).toBe(true);
+      expect(fit.hudAboveBoard).toBe(true);
+      expect(fit.usefulBoard).toBe(true);
     });
   });
 

@@ -69,11 +69,13 @@ const mockCanvas = {
     clearRect: () => {}, fillRect: () => {}, beginPath: () => {}, moveTo: () => {}, lineTo: () => {},
     stroke: () => {}, arc: () => {}, fill: () => {}, save: () => {}, restore: () => {},
     setTransform: () => {}, translate: () => {}, closePath: () => {}, roundRect: () => {},
-    quadraticCurveTo: () => {},
+    quadraticCurveTo: () => {}, strokeRect: () => {},
     ellipse: () => {},
     rect: () => {}, setLineDash: () => {},
     rotate: () => {},
     fillText: () => {},
+    createLinearGradient: () => ({ addColorStop: () => {} }),
+    createRadialGradient: () => ({ addColorStop: () => {} }),
     strokeStyle: '', fillStyle: '', lineWidth: 0, shadowBlur: 0, shadowColor: '', globalAlpha: 1, font: '', textAlign: ''
   }),
   classList: { remove: () => {}, add: () => {}, toggle: () => {}, contains: () => false },
@@ -246,6 +248,22 @@ test('Drop creates entity in playing state', () => {
   const initialCount = game.entities.length;
   game.drop();
   assert(game.entities.length === initialCount + 1, 'Should create one entity');
+});
+test('Idle updates never drop a shape without player input', () => {
+  const game = new FusionGame();
+  game.state = 'playing';
+  const initialCount = game.entities.length;
+  for (let i = 0; i < 600; i++) game.update();
+  assertEqual(game.entities.length, initialCount);
+  assertEqual(game.dropsCount, 0);
+});
+test('Duplicate input cannot spawn a second piece during the drop gate', () => {
+  const game = new FusionGame();
+  game.state = 'playing';
+  assertEqual(game.requestDrop(), true);
+  assertEqual(game.requestDrop(), false);
+  assertEqual(game.entities.length, 1);
+  assertEqual(game.dropsCount, 1);
 });
 test('Drop is blocked in intro state', () => {
   const game = new FusionGame();

@@ -375,7 +375,8 @@ class FusionGame {
   }
 
   showStartScreen() {
-    this.showOnboardingIfNeeded();
+    // The intro already teaches the rules. A second tutorial here competed
+    // with the mode picker and could render behind it on a first launch.
     this.state = 'name-entry';
     document.getElementById('start-screen').classList.remove('hidden');
     this.disableCanvas();
@@ -386,8 +387,8 @@ class FusionGame {
 
     const onStart = () => {
       const name = startName.value.trim();
-      if (!name) { startName.style.borderColor = 'rgba(255, 0, 102, 0.6)'; return; }
-      this.playerName = name;
+      // A callsign improves the leaderboard, but should not block the first run.
+      this.playerName = name || 'Player';
       this.state = 'playing';
       this.sounds.init();
       this.sounds.startAmbient();
@@ -497,7 +498,7 @@ class FusionGame {
 
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Backquote') { e.preventDefault(); this.toggleDebugOverlay(); }
-      if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.drop(); }
+      if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.requestDrop(); }
       if (e.code === 'Escape') this.togglePause();
       // Phase 1 — keyboard aim (Left/Right or A/D)
       if (this.state === 'playing') {
@@ -567,7 +568,16 @@ class FusionGame {
 
   handleDrop(e) {
     if (this.state !== 'playing') return;
+    this.requestDrop();
+  }
+
+  requestDrop() {
+    if (this.state !== 'playing') return false;
+    // Ignore duplicate touch/click events and button mashing while the last
+    // piece is still in its spawn window. One gesture must equal one piece.
+    if (this.entities.some(e => e.active && e.immuneTimer > 0)) return false;
     this.drop();
+    return true;
   }
 
   drop() {
@@ -807,20 +817,8 @@ class FusionGame {
     this._dangerLevel = highestAbove === -Infinity ? 0 : Math.max(0, Math.min(1, 1 - (deathLine - highestAbove) / 100));
     this.renderSpeedTimer();
 
-    // FD-002: auto-drop after ~70 frames of inactivity if no entity is
-    // mid-flight. Standard Suika behavior — the next fruit falls on its
-    // own if the player doesn't tap.
-    const lastDropped = this.entities.find(e => e.immuneTimer > 0);
-    if (lastDropped) {
-      // Mid-flight entity still settling — reset the auto-drop clock so
-      // we don't fire the moment it lands.
-      this.dropTimer = 0;
-    } else {
-      this.dropTimer = (this.dropTimer || 0) + 1;
-      if (this.dropTimer >= 70) {
-        this.drop();
-      }
-    }
+    // Player control is absolute: update() must never create a piece. Drops
+    // only originate from an explicit pointer, touch, or keyboard action.
 
     // Phase 2 — Speed mode time-attack countdown.
     if (this.state === 'playing' && GAME_MODES[this.mode] && GAME_MODES[this.mode].timeAttack) {
@@ -1257,9 +1255,11 @@ class FusionGame {
   persistGame() {
     try {
       const snap = {
-        version: 1,
+        version: 2,
         score: this.score,
         level: this.level,
+        mode: this.mode,
+        timeLeft: this.timeLeft,
         playerName: this.playerName,
         currentShape: this.currentShape,
         nextShape: this.nextShape,
@@ -1301,6 +1301,8 @@ class FusionGame {
     if (!snap || !Array.isArray(snap.entities)) return false;
     this.score = snap.score || 0;
     this.level = snap.level || 1;
+    this.setMode(GAME_MODES[snap.mode] ? snap.mode : DEFAULT_MODE);
+    if (this.mode === 'speed' && Number.isFinite(snap.timeLeft)) this.timeLeft = Math.max(0, snap.timeLeft);
     this.playerName = snap.playerName || '';
     this.currentShape = snap.currentShape || 0;
     this.nextShape = snap.nextShape || 0;

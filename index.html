@@ -18,8 +18,7 @@
 <meta name="theme-color" content="#0a0a14">
 <!-- Phase 3 — PWA manifest -->
 <link rel="manifest" href="/manifest.webmanifest">
-<title>Fusion Drop</title>
-<link rel="stylesheet" href="style.css?v=31">
+<link rel="stylesheet" href="style.css?v=34">
 </head>
 <body>
 <div id="game-wrapper">
@@ -36,8 +35,8 @@
       <canvas id="next-canvas-desk" width="140" height="140"></canvas>
     </div>
     <div id="controls-desk">
-      <button id="btn-pause-desk">⏸</button>
-      <button id="btn-restart-desk">↻</button>
+      <button id="btn-pause-desk" aria-label="Pause game" title="Pause (P)">Ⅱ</button>
+      <button id="btn-restart-desk" aria-label="Restart game" title="Restart">↻</button>
     </div>
     <div id="leaderboard-panel">
       <div class="lb-title">🏆 ALL TIME</div>
@@ -63,18 +62,19 @@
     </div>
     <div id="intro-screen" class="overlay hidden">
       <div class="intro-content">
+        <div class="intro-kicker">DROP · MERGE · EVOLVE</div>
         <h1>FUSION DROP</h1>
+        <p class="intro-tagline">Build impossible fusions across eleven evolving worlds.</p>
         <div class="intro-howto">
           <h2>How to Play</h2>
           <ol>
-            <li>Move mouse to aim, click to drop shapes</li>
-            <li>Same shapes merge into bigger shapes</li>
-            <li>Don't let shapes cross the death line</li>
-            <li>Merge two biggest shapes to unlock next level</li>
+            <li><strong>Aim &amp; drop.</strong> Place each piece with intent.</li>
+            <li><strong>Match twins.</strong> Equal pieces fuse into the next tier.</li>
+            <li><strong>Stay below the line.</strong> Two max fusions unlock a new world.</li>
           </ol>
         </div>
         <div class="intro-themes">
-          <h2>11 Themes to Unlock</h2>
+          <h2>11 worlds to master</h2>
           <p>Fusion → Treasure → Slime → Potion → Planet → Food → Aquarium → Dice → Dungeon → Wizard → Cat</p>
         </div>
         <button id="btn-intro-start">Start Game</button>
@@ -88,7 +88,7 @@
     </div>
     <div id="start-screen" class="overlay hidden">
       <h1>FUSION DROP</h1>
-      <input id="start-name" type="text" placeholder="Your name" maxlength="20">
+      <input id="start-name" type="text" placeholder="Callsign (optional)" maxlength="20" autocomplete="off">
       <div id="mode-selector" class="mode-selector">
         <div class="mode-title">Mode</div>
         <button class="mode-btn selected" data-mode="classic" type="button">
@@ -161,8 +161,8 @@
         <canvas id="next-canvas" width="100" height="100"></canvas>
       </div>
       <div id="controls">
-        <button id="btn-pause">⏸</button>
-        <button id="btn-restart">↻</button>
+        <button id="btn-pause" aria-label="Pause game">Ⅱ</button>
+        <button id="btn-restart" aria-label="Restart game">↻</button>
       </div>
     </div>
     <div id="mobile-lb-row">

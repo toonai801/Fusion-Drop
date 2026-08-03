@@ -33,20 +33,28 @@ test.describe('Fusion Drop full walkthrough (smoke)', () => {
 
     // Canvas dimensions
     const cv = await page.evaluate(() => ({ w: window.game.canvas.width, h: window.game.canvas.height }));
-    expect(cv.w).toBe(400);
-    expect(cv.h).toBe(600);
+    expect(cv.w).toBeGreaterThanOrEqual(440);
+    expect(cv.w).toBeLessThanOrEqual(520);
+    expect(cv.h / cv.w).toBeGreaterThan(1.49);
+    expect(cv.h / cv.w).toBeLessThan(1.51);
 
     // Drop 8 shapes — alternate at two positions to force at least one merge.
     for (let i = 0; i < 8; i++) {
       await page.evaluate((i) => {
         const cv = window.game.canvas;
+        // Keep this smoke test deterministic. Random previews can otherwise
+        // produce eight different pieces and never exercise a merge.
+        window.game.currentShape = 0;
+        window.game.nextShape = 0;
         const rect = cv.getBoundingClientRect();
         // Alternate x positions: 1st, 3rd, 5th, 7th at x=150; 2nd, 4th, 6th, 8th at x=250.
         const x = rect.left + (i % 2 === 0 ? 150 : 250);
         const evt = new MouseEvent('click', { clientX: x, clientY: rect.top + 30, bubbles: true });
         cv.dispatchEvent(evt);
       }, i);
-      await page.waitForTimeout(400);
+      await expect.poll(() => page.evaluate(() =>
+        window.game.entities.every(e => !e.active || e.immuneTimer <= 0)
+      )).toBe(true);
     }
     const drops = await page.evaluate(() => window.game.dropsCount);
     expect(drops).toBe(8);
