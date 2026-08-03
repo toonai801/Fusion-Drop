@@ -282,13 +282,13 @@ test.describe('Fusion Drop E2E', () => {
       expect(score).toBe(0);
     });
 
-    test('desktop layout shows at 1024×768', async ({ page }) => {
+    test('desktop cabinet layout shows at 1024×768', async ({ page }) => {
       await page.goto(ENTRY_URL);
       await page.waitForSelector('#game-wrapper', { timeout: 10000 });
       const left = page.locator('#left-panel');
       await expect(left).toBeVisible();
       const right = page.locator('#right-panel');
-      await expect(right).toBeVisible();
+      await expect(right).not.toBeVisible();
       const fit = await page.evaluate(() => {
         const board = document.querySelector('#game-area').getBoundingClientRect();
         return {

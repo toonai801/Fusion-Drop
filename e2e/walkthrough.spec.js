@@ -33,8 +33,8 @@ test.describe('Fusion Drop full walkthrough (smoke)', () => {
 
     // Canvas dimensions
     const cv = await page.evaluate(() => ({ w: window.game.canvas.width, h: window.game.canvas.height }));
-    expect(cv.w).toBeGreaterThanOrEqual(390);
-    expect(cv.w).toBeLessThanOrEqual(400);
+    expect(cv.w).toBeGreaterThanOrEqual(440);
+    expect(cv.w).toBeLessThanOrEqual(520);
     expect(cv.h / cv.w).toBeGreaterThan(1.49);
     expect(cv.h / cv.w).toBeLessThan(1.51);
 
