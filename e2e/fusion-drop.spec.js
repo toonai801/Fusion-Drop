@@ -85,6 +85,28 @@ test.describe('Fusion Drop E2E', () => {
       expect(idle).toEqual({ entities: 0, drops: 0 });
     });
 
+    test('rapid duplicate input creates only one piece', async ({ page }) => {
+      await page.goto(ENTRY_URL);
+      await page.click('#btn-intro-start');
+      await page.click('#btn-start');
+      await page.evaluate(() => {
+        const canvas = window.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const makeClick = () => new MouseEvent('click', {
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + 80,
+          bubbles: true,
+        });
+        canvas.dispatchEvent(makeClick());
+        canvas.dispatchEvent(makeClick());
+      });
+      const result = await page.evaluate(() => ({
+        entities: window.game.entities.length,
+        drops: window.game.dropsCount,
+      }));
+      expect(result).toEqual({ entities: 1, drops: 1 });
+    });
+
     test('mouse movement shows aiming indicator', async ({ page }) => {
       await page.goto(ENTRY_URL);
       await page.click('#btn-intro-start');

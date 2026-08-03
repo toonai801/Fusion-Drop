@@ -257,6 +257,14 @@ test('Idle updates never drop a shape without player input', () => {
   assertEqual(game.entities.length, initialCount);
   assertEqual(game.dropsCount, 0);
 });
+test('Duplicate input cannot spawn a second piece during the drop gate', () => {
+  const game = new FusionGame();
+  game.state = 'playing';
+  assertEqual(game.requestDrop(), true);
+  assertEqual(game.requestDrop(), false);
+  assertEqual(game.entities.length, 1);
+  assertEqual(game.dropsCount, 1);
+});
 test('Drop is blocked in intro state', () => {
   const game = new FusionGame();
   game.state = 'intro';

@@ -498,7 +498,7 @@ class FusionGame {
 
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Backquote') { e.preventDefault(); this.toggleDebugOverlay(); }
-      if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.drop(); }
+      if (e.code === 'Space' || e.code === 'Enter') { if (this.state === 'playing') this.requestDrop(); }
       if (e.code === 'Escape') this.togglePause();
       // Phase 1 — keyboard aim (Left/Right or A/D)
       if (this.state === 'playing') {
@@ -568,7 +568,16 @@ class FusionGame {
 
   handleDrop(e) {
     if (this.state !== 'playing') return;
+    this.requestDrop();
+  }
+
+  requestDrop() {
+    if (this.state !== 'playing') return false;
+    // Ignore duplicate touch/click events and button mashing while the last
+    // piece is still in its spawn window. One gesture must equal one piece.
+    if (this.entities.some(e => e.active && e.immuneTimer > 0)) return false;
     this.drop();
+    return true;
   }
 
   drop() {
@@ -1246,9 +1255,11 @@ class FusionGame {
   persistGame() {
     try {
       const snap = {
-        version: 1,
+        version: 2,
         score: this.score,
         level: this.level,
+        mode: this.mode,
+        timeLeft: this.timeLeft,
         playerName: this.playerName,
         currentShape: this.currentShape,
         nextShape: this.nextShape,
@@ -1290,6 +1301,8 @@ class FusionGame {
     if (!snap || !Array.isArray(snap.entities)) return false;
     this.score = snap.score || 0;
     this.level = snap.level || 1;
+    this.setMode(GAME_MODES[snap.mode] ? snap.mode : DEFAULT_MODE);
+    if (this.mode === 'speed' && Number.isFinite(snap.timeLeft)) this.timeLeft = Math.max(0, snap.timeLeft);
     this.playerName = snap.playerName || '';
     this.currentShape = snap.currentShape || 0;
     this.nextShape = snap.nextShape || 0;
