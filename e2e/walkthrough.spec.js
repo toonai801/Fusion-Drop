@@ -42,6 +42,10 @@ test.describe('Fusion Drop full walkthrough (smoke)', () => {
     for (let i = 0; i < 8; i++) {
       await page.evaluate((i) => {
         const cv = window.game.canvas;
+        // Keep this smoke test deterministic. Random previews can otherwise
+        // produce eight different pieces and never exercise a merge.
+        window.game.currentShape = 0;
+        window.game.nextShape = 0;
         const rect = cv.getBoundingClientRect();
         // Alternate x positions: 1st, 3rd, 5th, 7th at x=150; 2nd, 4th, 6th, 8th at x=250.
         const x = rect.left + (i % 2 === 0 ? 150 : 250);
