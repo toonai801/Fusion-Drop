@@ -276,6 +276,15 @@ test.describe('Fusion Drop E2E', () => {
       await expect(left).toBeVisible();
       const right = page.locator('#right-panel');
       await expect(right).toBeVisible();
+      const fit = await page.evaluate(() => {
+        const board = document.querySelector('#game-area').getBoundingClientRect();
+        return {
+          noPageScroll: document.body.scrollWidth <= innerWidth && document.body.scrollHeight <= innerHeight,
+          boardVisible: board.top >= 0 && board.left >= 0 && board.right <= innerWidth && board.bottom <= innerHeight,
+        };
+      });
+      expect(fit.noPageScroll).toBe(true);
+      expect(fit.boardVisible).toBe(true);
     });
   });
 
@@ -294,6 +303,20 @@ test.describe('Fusion Drop E2E', () => {
       await expect(left).not.toBeVisible();
       const right = page.locator('#right-panel');
       await expect(right).not.toBeVisible();
+      const fit = await page.evaluate(() => {
+        const board = document.querySelector('#game-area').getBoundingClientRect();
+        const hud = document.querySelector('#bottom-panel').getBoundingClientRect();
+        return {
+          noPageScroll: document.body.scrollWidth <= innerWidth && document.body.scrollHeight <= innerHeight,
+          boardVisible: board.top >= 0 && board.left >= 0 && board.right <= innerWidth && board.bottom <= innerHeight,
+          hudAboveBoard: hud.bottom <= board.top,
+          usefulBoard: board.height >= innerHeight * 0.7,
+        };
+      });
+      expect(fit.noPageScroll).toBe(true);
+      expect(fit.boardVisible).toBe(true);
+      expect(fit.hudAboveBoard).toBe(true);
+      expect(fit.usefulBoard).toBe(true);
     });
   });
 
