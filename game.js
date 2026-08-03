@@ -375,7 +375,8 @@ class FusionGame {
   }
 
   showStartScreen() {
-    this.showOnboardingIfNeeded();
+    // The intro already teaches the rules. A second tutorial here competed
+    // with the mode picker and could render behind it on a first launch.
     this.state = 'name-entry';
     document.getElementById('start-screen').classList.remove('hidden');
     this.disableCanvas();
@@ -386,8 +387,8 @@ class FusionGame {
 
     const onStart = () => {
       const name = startName.value.trim();
-      if (!name) { startName.style.borderColor = 'rgba(255, 0, 102, 0.6)'; return; }
-      this.playerName = name;
+      // A callsign improves the leaderboard, but should not block the first run.
+      this.playerName = name || 'Player';
       this.state = 'playing';
       this.sounds.init();
       this.sounds.startAmbient();
