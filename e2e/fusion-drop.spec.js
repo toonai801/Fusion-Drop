@@ -129,22 +129,22 @@ test.describe('Fusion Drop E2E', () => {
         const g = window.game;
         const s = g.getShapes()[0];
         g.entities.push({
-          x: g.canvas.width / 2 - s.radius,
+          x: g.canvas.width / 2 - s.radius * 0.5,
           y: g.canvas.height - s.radius - 20,
           vx: 0, vy: 0,
           radius: s.radius, shapeType: 0,
           active: true, settleTimer: 0,
           spawnScale: 1, targetScale: 1, justDropped: false,
-          hasBeenBelowLine: true,
+          hasBeenBelowLine: true, immuneTimer: 0,
         });
         g.entities.push({
-          x: g.canvas.width / 2 + s.radius,
+          x: g.canvas.width / 2 + s.radius * 0.5,
           y: g.canvas.height - s.radius - 20,
           vx: 0, vy: 0,
           radius: s.radius, shapeType: 0,
           active: true, settleTimer: 0,
           spawnScale: 1, targetScale: 1, justDropped: false,
-          hasBeenBelowLine: true,
+          hasBeenBelowLine: true, immuneTimer: 0,
         });
       });
       const before = await page.evaluate(() => window.game.entities.length);

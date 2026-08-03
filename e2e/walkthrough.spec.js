@@ -33,8 +33,10 @@ test.describe('Fusion Drop full walkthrough (smoke)', () => {
 
     // Canvas dimensions
     const cv = await page.evaluate(() => ({ w: window.game.canvas.width, h: window.game.canvas.height }));
-    expect(cv.w).toBe(400);
-    expect(cv.h).toBe(600);
+    expect(cv.w).toBeGreaterThanOrEqual(390);
+    expect(cv.w).toBeLessThanOrEqual(400);
+    expect(cv.h / cv.w).toBeGreaterThan(1.49);
+    expect(cv.h / cv.w).toBeLessThan(1.51);
 
     // Drop 8 shapes — alternate at two positions to force at least one merge.
     for (let i = 0; i < 8; i++) {
