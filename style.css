@@ -973,3 +973,119 @@ button,input{font:inherit} button:focus-visible,input:focus-visible,a:focus-visi
  #start-screen{justify-content:center}#start-screen h1{font-size:26px}#start-screen input{padding:9px 12px}.mode-btn,#start-screen .mode-btn{min-height:46px;padding:6px 11px}.daily-theme-banner,.best-today-banner{padding:7px 10px}#game-over #final-score{font-size:44px;margin:6px 0}
 }
 @media(max-width:360px),(max-height:620px){#bottom-panel{flex-basis:64px;height:64px}#mobile-info-row{height:64px;grid-template-columns:minmax(96px,1fr) 64px 64px}#mobile-info-row #score-board,#mobile-info-row #next-fruit,#mobile-info-row #controls{height:64px}#mobile-info-row #next-canvas{width:50px;height:50px}#mobile-info-row #controls button{height:26px}#mobile-lb-row,.lb-toggle-btn{height:64px}#mobile-lb-row .lb-content{top:70px}#game-area{width:min(calc(100vw - 12px),calc((100dvh - 82px)*.6667));height:min(calc(100dvh - 82px),calc((100vw - 12px)*1.5))}.intro-tagline,.intro-themes{display:none}.intro-content h1{font-size:29px}.intro-content ol{font-size:9px}#start-screen{gap:6px}.mode-selector{gap:4px}.mode-btn,#start-screen .mode-btn{min-height:41px}}
+
+/* BETA UI RESET — desktop is a game cabinet with one command deck. Mobile is
+   a playfield with a status dock, not the desktop dashboard compressed. */
+@media (min-width: 701px) {
+  #game-wrapper {
+    grid-template-columns: minmax(440px, 520px) 260px;
+    grid-template-areas: "board deck";
+    gap: clamp(24px, 4vw, 52px);
+    padding: 24px;
+  }
+  #game-area { grid-area: board; width: 100%; max-height: calc(100dvh - 48px); }
+  #left-panel {
+    grid-area: deck;
+    width: 260px;
+    max-height: calc(100dvh - 48px);
+    align-self: center;
+    gap: 14px;
+  }
+  #right-panel { display: none !important; }
+  #score-board-desk {
+    padding: 24px 22px;
+    grid-template-columns: 1.25fr .75fr;
+    border-radius: 24px;
+  }
+  #score-desk { font-size: 58px; letter-spacing: -.04em; }
+  #high-score-desk { font-size: 28px; }
+  #score-board-desk .score-label,
+  #score-board-desk .high-label { font-size: 10px; }
+  #next-fruit-desk {
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    text-align: left;
+  }
+  #next-fruit-desk .next-label { font-size: 11px; }
+  #next-canvas-desk { width: 142px; height: 142px; margin: 0; }
+  #controls-desk button { min-height: 58px; font-size: 20px; border-radius: 18px; }
+  #leaderboard-panel { padding: 18px; border-radius: 20px; }
+  #leaderboard-panel .lb-title { font-size: 10px; }
+  #leaderboard-panel ol { max-height: min(250px, 27dvh); }
+  #leaderboard-panel li { padding: 8px 0; font-size: 13px; }
+}
+
+@media (min-width: 701px) and (max-width: 860px) {
+  #game-wrapper { grid-template-columns: minmax(390px, 460px) 220px; gap: 18px; }
+  #left-panel { width: 220px; }
+  #score-desk { font-size: 46px; }
+  #next-fruit-desk { grid-template-columns: 58px 1fr; }
+  #next-canvas-desk { width: 120px; height: 120px; }
+}
+
+@media (max-width: 700px) {
+  #game-wrapper { gap: 8px; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  #bottom-panel {
+    flex-basis: 66px;
+    width: min(100%, 460px);
+    height: 66px;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 4px;
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 18px;
+    background: rgba(12, 16, 27, .96);
+    box-shadow: 0 12px 28px rgba(0,0,0,.3);
+  }
+  #mobile-info-row { height: 54px; grid-template-columns: minmax(112px, 1fr) 56px 66px; gap: 3px; }
+  #mobile-info-row #score-board,
+  #mobile-info-row #next-fruit,
+  #mobile-info-row #controls {
+    height: 54px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+  }
+  #mobile-info-row #score-board { padding: 7px 9px; border-right: 1px solid rgba(255,255,255,.08); }
+  #mobile-info-row .score-label,
+  #mobile-info-row .high-label { font-size: 7px; letter-spacing: .16em; }
+  #mobile-info-row #score,
+  #mobile-info-row #high-score { margin-top: 2px; font-size: 22px; font-weight: 850; }
+  #mobile-info-row #next-fruit { padding: 0; border-right: 1px solid rgba(255,255,255,.08); }
+  #mobile-info-row #next-fruit .next-label { display: none; }
+  #mobile-info-row #next-canvas { width: 52px; height: 52px; }
+  #mobile-info-row #controls { grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px 3px; }
+  #mobile-info-row #controls button {
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+    color: #b8cad4;
+    background: rgba(255,255,255,.055);
+    font-size: 13px;
+  }
+  #mobile-lb-row, .lb-toggle-btn { width: 42px; height: 54px; }
+  .lb-toggle-btn { border: 0; border-radius: 12px; background: rgba(255,255,255,.04); }
+  #mobile-lb-row .lb-content { top: 72px; }
+  #game-area {
+    width: min(calc(100vw - 16px), calc((100dvh - 90px) * .6667));
+    height: min(calc(100dvh - 90px), calc((100vw - 16px) * 1.5));
+    border-radius: 24px;
+  }
+}
+
+@media (max-width: 360px), (max-height: 620px) {
+  #bottom-panel { flex-basis: 60px; height: 60px; }
+  #mobile-info-row { height: 48px; grid-template-columns: minmax(100px, 1fr) 48px 62px; }
+  #mobile-info-row #score-board,
+  #mobile-info-row #next-fruit,
+  #mobile-info-row #controls { height: 48px; }
+  #mobile-info-row #next-canvas { width: 46px; height: 46px; }
+  #mobile-info-row #controls { padding: 5px 2px; }
+  #mobile-info-row #controls button { height: 38px; }
+  #mobile-lb-row, .lb-toggle-btn { height: 48px; }
+  #mobile-lb-row .lb-content { top: 66px; }
+  #game-area { width:min(calc(100vw - 16px),calc((100dvh - 84px)*.6667)); height:min(calc(100dvh - 84px),calc((100vw - 16px)*1.5)); }
+}
