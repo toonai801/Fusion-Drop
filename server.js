@@ -1,10 +1,15 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
 const PORT = process.env.PORT || 8090;
-const SCORES_FILE = path.join(__dirname, 'scores.json');
+const SCORES_FILE = process.env.SCORES_FILE
+  ? path.resolve(process.env.SCORES_FILE)
+  : path.join(__dirname, 'scores.json');
+if (process.env.RESET_SCORES_ON_START === '1') {
+  fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
+  fs.writeFileSync(SCORES_FILE, '[]\n');
+}
 const MAX_BODY_BYTES = 1024;          // Reject POSTs > 1 KB
 const MAX_SCORE = 99999;             // Sanity cap on leaderboard entries
 const MAX_NAME_LENGTH = 20;          // Prevent name-spam and XSS surface
@@ -24,6 +29,7 @@ function saveScores(scores) {
   const tmpPath = SCORES_FILE + '.tmp.' + process.pid + '.' + Date.now();
   const data = JSON.stringify(scores, null, 2);
   try {
+    fs.mkdirSync(path.dirname(SCORES_FILE), { recursive: true });
     const fd = fs.openSync(tmpPath, 'w');
     try {
       fs.writeSync(fd, data);
@@ -128,8 +134,17 @@ const diagCounters = {
   postScores: 0, getScores: 0, getDiag: 0,
 };
 
+const TEST_IDLE_EXIT_MS = Number(process.env.TEST_IDLE_EXIT_MS || 0);
+let testIdleTimer = null;
+function bumpTestIdleTimer() {
+  if (!TEST_IDLE_EXIT_MS) return;
+  if (testIdleTimer) clearTimeout(testIdleTimer);
+  testIdleTimer = setTimeout(() => shutdown(), TEST_IDLE_EXIT_MS);
+}
+
 const server = http.createServer((req, res) => {
-  const parsed = url.parse(req.url, true);
+  bumpTestIdleTimer();
+  const parsed = new URL(req.url, 'http://localhost');
   const pathname = parsed.pathname;
 
   // CORS: env-driven ALLOWED_ORIGIN (comma-sep). Default to local dev host.
@@ -261,4 +276,15 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  bumpTestIdleTimer();
 });
+
+let shuttingDown = false;
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 1500).unref();
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

@@ -11,7 +11,7 @@ class SoundManager {
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.3;
+      this.masterGain.gain.value = 0.22;
       this.masterGain.connect(this.ctx.destination);
       this.initialized = true;
     } catch (e) {
@@ -29,33 +29,31 @@ class SoundManager {
     const gain = this.ctx.createGain();
     
     osc.type = 'sine';
-    // Phase B polish-21: randomize drop pitch by +/- 5% so successive
-    // drops don't sound mechanical.
-    const pitchOffset = 1 + ((Math.random() - 0.5) * 0.1);
-    osc.frequency.setValueAtTime(880 * pitchOffset, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440 * pitchOffset, this.ctx.currentTime + 0.15);
+    const pitchOffset = 1 + ((Math.random() - 0.5) * 0.035);
+    osc.frequency.setValueAtTime(165 * pitchOffset, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(78 * pitchOffset, this.ctx.currentTime + 0.11);
     
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.11);
     
     osc.connect(gain);
     gain.connect(this.masterGain);
     
     osc.start(this.ctx.currentTime);
-    osc.stop(this.ctx.currentTime + 0.15);
+    osc.stop(this.ctx.currentTime + 0.12);
 
     // Harmonic overtone
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1760, this.ctx.currentTime);
-    osc2.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.1);
-    gain2.gain.setValueAtTime(0.15, this.ctx.currentTime);
-    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(310 * pitchOffset, this.ctx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(210 * pitchOffset, this.ctx.currentTime + 0.07);
+    gain2.gain.setValueAtTime(0.035, this.ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
     osc2.connect(gain2);
     gain2.connect(this.masterGain);
     osc2.start(this.ctx.currentTime);
-    osc2.stop(this.ctx.currentTime + 0.1);
+    osc2.stop(this.ctx.currentTime + 0.09);
   }
 
   // Harmonic merge tone - pitch rises with tier
@@ -70,28 +68,28 @@ class SoundManager {
     // merging 'prism' in Wizard. Theme index can be set externally via
     // this.themeIndex; defaults to 0 (Fusion).
     const THEME_TIMBRES = [
-      { wave: 'triangle',  harm: 'sine',     base: 440, decay: 0.30 },
-      { wave: 'square',    harm: 'triangle', base: 523, decay: 0.32 },
-      { wave: 'sawtooth',  harm: 'triangle', base: 392, decay: 0.28 },
-      { wave: 'triangle',  harm: 'sine',     base: 466, decay: 0.36 },
-      { wave: 'sine',      harm: 'triangle', base: 587, decay: 0.34 },
-      { wave: 'triangle',  harm: 'sine',     base: 349, decay: 0.32 },
-      { wave: 'square',    harm: 'sine',     base: 659, decay: 0.30 },
-      { wave: 'triangle',  harm: 'square',   base: 415, decay: 0.35 },
-      { wave: 'sawtooth',  harm: 'square',   base: 311, decay: 0.40 },
-      { wave: 'triangle',  harm: 'sine',     base: 698, decay: 0.30 },
-      { wave: 'sine',      harm: 'triangle', base: 247, decay: 0.45 },
+      { wave: 'sine', harm: 'triangle', base: 220, decay: 0.28 },
+      { wave: 'sine', harm: 'triangle', base: 233, decay: 0.30 },
+      { wave: 'sine', harm: 'triangle', base: 196, decay: 0.28 },
+      { wave: 'sine', harm: 'triangle', base: 247, decay: 0.32 },
+      { wave: 'sine', harm: 'triangle', base: 262, decay: 0.32 },
+      { wave: 'sine', harm: 'triangle', base: 208, decay: 0.30 },
+      { wave: 'sine', harm: 'triangle', base: 277, decay: 0.30 },
+      { wave: 'sine', harm: 'triangle', base: 220, decay: 0.32 },
+      { wave: 'sine', harm: 'triangle', base: 185, decay: 0.36 },
+      { wave: 'sine', harm: 'triangle', base: 294, decay: 0.30 },
+      { wave: 'sine', harm: 'triangle', base: 196, decay: 0.38 },
     ];
     const timbre = THEME_TIMBRES[Math.min(this.themeIndex || 0, THEME_TIMBRES.length - 1)];
-    const baseFreq = timbre.base + (tier * 110);
+    const baseFreq = timbre.base * Math.pow(2, Math.min(tier, 10) / 12);
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = timbre.wave;
     osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, this.ctx.currentTime + 0.2);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.12, this.ctx.currentTime + 0.12);
     // FD-002: louder merge (was 0.25) so high-tier merges are satisfying.
-    const gainBase = 0.18 + tier * 0.04;
+    const gainBase = Math.min(0.16 + tier * 0.012, 0.27);
     gain.gain.setValueAtTime(gainBase, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + timbre.decay);
     osc.connect(gain);
@@ -102,8 +100,8 @@ class SoundManager {
     const osc2 = this.ctx.createOscillator();
     const gain2 = this.ctx.createGain();
     osc2.type = timbre.harm;
-    osc2.frequency.setValueAtTime(baseFreq * 2, this.ctx.currentTime);
-    gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
+    osc2.frequency.setValueAtTime(baseFreq * 1.5, this.ctx.currentTime);
+    gain2.gain.setValueAtTime(0.045, this.ctx.currentTime);
     gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + timbre.decay * 0.85);
     osc2.connect(gain2);
     gain2.connect(this.masterGain);
@@ -154,7 +152,7 @@ class SoundManager {
     notes.forEach((freq, i) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      osc.type = 'sawtooth';
+      osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.12);
       gain.gain.setValueAtTime(0, this.ctx.currentTime + i * 0.12);
       gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + i * 0.12 + 0.03);
@@ -177,8 +175,8 @@ class SoundManager {
       this._warningOsc = this.ctx.createOscillator();
       this._warningOsc2 = this.ctx.createOscillator();
       this._warningGain = this.ctx.createGain();
-      this._warningOsc.type = 'sawtooth';
-      this._warningOsc2.type = 'triangle';
+      this._warningOsc.type = 'sine';
+      this._warningOsc2.type = 'sine';
       this._warningOsc.frequency.value = 90;
       this._warningOsc2.frequency.value = 135;
       this._warningGain.gain.value = 0;
@@ -188,7 +186,7 @@ class SoundManager {
       this._warningOsc.start();
       this._warningOsc2.start();
     }
-    const target = Math.max(0, Math.min(1, intensity)) * 0.18;
+      const target = Math.max(0, Math.min(1, intensity)) * 0.08;
     const now = this.ctx.currentTime;
     this._warningGain.gain.cancelScheduledValues(now);
     this._warningGain.gain.linearRampToValueAtTime(target, now + 0.25);

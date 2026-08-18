@@ -5,3 +5,4 @@ node_modules/
 # FD-001-A2: runtime state files (regenerated on every server boot/save)
 scores.json
 active.json
+test-results/scores-e2e.json

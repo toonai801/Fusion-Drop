@@ -3,18 +3,32 @@
 // Spawn weights strongly favor the smallest tiers — Suika gameplay depends on this.
 
 const SHAPES = [
-  { name: 'cherry',    radius: 22, color: '#dc143c', glow: '#ff5577', score: 2,   tier: 0  },
-  { name: 'strawberry',radius: 30, color: '#ff3366', glow: '#ff6680', score: 6,   tier: 1  },
-  { name: 'grape',     radius: 40, color: '#7b2d8e', glow: '#b366cc', score: 15,  tier: 2  },
-  { name: 'orange',    radius: 50, color: '#ffa500', glow: '#ffcc66', score: 35,  tier: 3  },
-  { name: 'lemon',     radius: 58, color: '#f4e430', glow: '#fff080', score: 70,  tier: 4  },
-  { name: 'apple',     radius: 68, color: '#cc0033', glow: '#ff4466', score: 150, tier: 5  },
-  { name: 'pear',      radius: 76, color: '#9acd32', glow: '#c8e878', score: 300, tier: 6  },
-  { name: 'peach',     radius: 84, color: '#ff8c69', glow: '#ffb090', score: 600, tier: 7  },
-  { name: 'pineapple', radius: 92, color: '#ffcc00', glow: '#ffe060', score: 1200,tier: 8  },
-  { name: 'melon',     radius: 102,color: '#3a7d44', glow: '#5fae6a', score: 2400,tier: 9  },
-  { name: 'watermelon',radius: 115,color: '#2e8b57', glow: '#4cb87a', score: 5000,tier: 10 },
+  { name: 'spark seed',         radius: 22, color: '#f6b83f', glow: '#ffe083', score: 2,   tier: 0  },
+  { name: 'glass droplet',      radius: 30, color: '#38aee8', glow: '#8be8ff', score: 6,   tier: 1  },
+  { name: 'luminous pearl',     radius: 40, color: '#eee7ff', glow: '#ffffff', score: 15,  tier: 2  },
+  { name: 'faceted core',       radius: 50, color: '#6654de', glow: '#9c8cff', score: 35,  tier: 3  },
+  { name: 'orbiting rune stone',radius: 58, color: '#253c86', glow: '#69d9ff', score: 70,  tier: 4  },
+  { name: 'crystal bloom',      radius: 68, color: '#7088ff', glow: '#b5ccff', score: 150, tier: 5  },
+  { name: 'contained star',     radius: 76, color: '#f0a83b', glow: '#ffe28c', score: 300, tier: 6  },
+  { name: 'arcane planet',      radius: 84, color: '#243b9a', glow: '#5ed6ff', score: 600, tier: 7  },
+  { name: 'crowned relic',      radius: 92, color: '#287bd8', glow: '#75e7ff', score: 1200,tier: 8  },
+  { name: 'celestial heart',    radius: 102,color: '#5e4eda', glow: '#b68cff', score: 2400,tier: 9  },
+  { name: 'fusion singularity', radius: 115,color: '#37237f', glow: '#ffb45f', score: 5000,tier: 10 },
 ];
+
+const FUSION_SPRITE_FILES = [
+  'spark-seed', 'glass-droplet', 'luminous-pearl', 'faceted-core',
+  'orbiting-rune-stone', 'crystal-bloom', 'contained-star', 'arcane-planet',
+  'crowned-relic', 'celestial-heart', 'fusion-singularity',
+];
+let fusionSprites = [];
+if (typeof Image !== 'undefined') {
+  fusionSprites = FUSION_SPRITE_FILES.map((name) => {
+    const image = new Image();
+    image.src = 'assets/pieces/' + name + '.png';
+    return image;
+  });
+}
 
 // Spawn weights: cherry 50%, strawberry 25%, grape 12%, orange 7%, lemon 4%, apple 1.5%, pear 0.4%, peach 0.09%, others ~0%.
 // Big fruits are NOT in the spawn pool — they only appear via merges.
@@ -37,6 +51,19 @@ function drawShape(ctx, x, y, shapeType, scale = 1, shapes = null, themeId = nul
   const r = s.radius * scale;
   ctx.save();
   ctx.translate(x, y);
+
+  const sprite = fusionSprites[shapeType];
+  if (sprite && sprite.complete && sprite.naturalWidth > 0 && typeof ctx.drawImage === 'function') {
+    // Individual square, alpha-trimmed sprites are drawn without filters,
+    // procedural highlights, color tinting, or sprite-sheet interpolation.
+    const size = r * 2.28;
+    ctx.shadowBlur = 0;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
+    ctx.restore();
+    return;
+  }
 
   // Soft outer glow
   ctx.shadowBlur = 14 * scale;

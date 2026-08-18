@@ -226,6 +226,25 @@ test('Floor containment works', () => {
   physics.update(entities, 396, 596);
   assert(entities[0].y + entities[0].radius <= 596, 'Should not pass floor');
 });
+test('Default floor contact has Suika-like low bounce', () => {
+  const physics = new Physics();
+  const entities = [{ x: 200, y: 580, vx: 2, vy: 10, radius: 14, active: true }];
+  physics.update(entities, 396, 596);
+  assert(Math.abs(entities[0].vy) < 0.5, 'Piece should settle instead of rebounding');
+  assert(Math.abs(entities[0].vx) < 2, 'Floor contact should remove sideways skating');
+});
+test('Overlapping pieces separate into a stable stack', () => {
+  const physics = new Physics();
+  const entities = [
+    { x: 190, y: 300, vx: 0, vy: 0, radius: 30, active: true },
+    { x: 230, y: 300, vx: 0, vy: 0, radius: 30, active: true },
+  ];
+  physics.update(entities, 396, 596);
+  const distance = Math.hypot(entities[1].x - entities[0].x, entities[1].y - entities[0].y);
+  assert(distance > 59, 'Solver should remove almost all overlap in one frame');
+  assert(Math.abs(entities[0].vx) < 0.1 && Math.abs(entities[1].vx) < 0.1,
+    'Resting pieces should not explode apart');
+});
 
 // TEST 5: Game State Machine
 console.log('\n🎮 STATE MACHINE');

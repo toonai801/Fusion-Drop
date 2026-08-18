@@ -65,7 +65,7 @@ class SpatialHash {
 }
 
 class Physics {
-  constructor(gravity = 0.3, friction = 0.985, bounce = 0.2) {
+  constructor(gravity = 0.42, friction = 0.994, bounce = 0.04) {
     this.gravity = gravity;
     this.friction = friction;
     this.bounce = bounce;
@@ -88,20 +88,23 @@ class Physics {
       if (e.x - e.radius < 0) {
         e.x = e.radius;
         e.vx = Math.abs(e.vx) * this.bounce;
+        e.vy *= 0.995;
       }
       if (e.x + e.radius > width) {
         e.x = width - e.radius;
         e.vx = -Math.abs(e.vx) * this.bounce;
+        e.vy *= 0.995;
       }
 
       // Floor collision
       if (e.y + e.radius > height - 2) {
         e.y = height - e.radius - 2;
         e.vy = -Math.abs(e.vy) * this.bounce;
-        if (Math.abs(e.vy) < 0.5) {
+        e.vx *= 0.82;
+        if (Math.abs(e.vy) < 0.35) {
           e.vy = 0;
-          e.vx *= 0.9; // Friction when resting
         }
+        if (Math.abs(e.vx) < 0.025) e.vx = 0;
       }
     }
 
@@ -113,9 +116,11 @@ class Physics {
     for (let i = 0; i < n; i++) {
       if (entities[i].active) this._hash.insert(entities[i], i);
     }
-    this._hash.forEachPair((i, j) => {
-      this.resolveCollision(entities[i], entities[j]);
-    });
+    const pairs = [];
+    this._hash.forEachPair((i, j) => pairs.push([i, j]));
+    for (let pass = 0; pass < 3; pass++) {
+      for (const [i, j] of pairs) this.resolveCollision(entities[i], entities[j]);
+    }
   }
 
   resolveCollision(a, b) {
@@ -131,9 +136,14 @@ class Physics {
       const nx = dx / dist;
       const ny = dy / dist;
 
-      const totalMass = a.radius + b.radius;
-      const moveA = (b.radius / totalMass) * overlap * 0.5 + 0.02;
-      const moveB = (a.radius / totalMass) * overlap * 0.5 + 0.02;
+      const massA = a.radius * a.radius;
+      const massB = b.radius * b.radius;
+      const invMassA = 1 / massA;
+      const invMassB = 1 / massB;
+      const invMassSum = invMassA + invMassB;
+      const correction = Math.max(overlap - 0.08, 0) * 0.88;
+      const moveA = correction * (invMassA / invMassSum);
+      const moveB = correction * (invMassB / invMassSum);
 
       a.x -= nx * moveA;
       a.y -= ny * moveA;
@@ -147,23 +157,32 @@ class Physics {
       if (velAlongNormal > 0) return;
 
       // Higher restitution makes merges feel juicy (Phase 1 — bump from 0.05).
-      const restitution = 0.25;
-      const impulse = velAlongNormal * -(1 + restitution) / totalMass;
+      const restitution = 0.025;
+      const impulse = -(1 + restitution) * velAlongNormal / invMassSum;
+      const impulseX = impulse * nx;
+      const impulseY = impulse * ny;
+      a.vx -= impulseX * invMassA;
+      a.vy -= impulseY * invMassA;
+      b.vx += impulseX * invMassB;
+      b.vy += impulseY * invMassB;
 
-      const impulseScale = 0.25;
-      a.vx -= nx * impulse * b.radius * impulseScale;
-      a.vy -= ny * impulse * b.radius * impulseScale;
-      b.vx += nx * impulse * a.radius * impulseScale;
-      b.vy += ny * impulse * a.radius * impulseScale;
+      const tx = -ny;
+      const ty = nx;
+      const tangentSpeed = dvx * tx + dvy * ty;
+      const frictionImpulse = -tangentSpeed / invMassSum * 0.16;
+      a.vx -= frictionImpulse * tx * invMassA;
+      a.vy -= frictionImpulse * ty * invMassA;
+      b.vx += frictionImpulse * tx * invMassB;
+      b.vy += frictionImpulse * ty * invMassB;
 
       // Smooth damping instead of binary clamp — feels less "stuck" (Phase 1).
       // Halve any sub-threshold velocity so things settle gradually rather than
       // snapping to zero.
-      const settleThresh = 0.08;
-      if (Math.abs(a.vx) < settleThresh) a.vx *= 0.5;
-      if (Math.abs(a.vy) < settleThresh) a.vy *= 0.5;
-      if (Math.abs(b.vx) < settleThresh) b.vx *= 0.5;
-      if (Math.abs(b.vy) < settleThresh) b.vy *= 0.5;
+      const settleThresh = 0.035;
+      if (Math.abs(a.vx) < settleThresh) a.vx = 0;
+      if (Math.abs(a.vy) < settleThresh) a.vy = 0;
+      if (Math.abs(b.vx) < settleThresh) b.vx = 0;
+      if (Math.abs(b.vy) < settleThresh) b.vy = 0;
     }
   }
 }

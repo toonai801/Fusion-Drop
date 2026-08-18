@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const GAME_URL = 'http://localhost:8090';
+const GAME_URL = 'http://127.0.0.1:8091';
 
 test.describe('Fusion Drop full walkthrough (smoke)', () => {
   test.use({ viewport: { width: 1024, height: 768 } });

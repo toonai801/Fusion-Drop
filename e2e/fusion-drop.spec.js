@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-const GAME_URL = 'http://localhost:8090';
+const GAME_URL = 'http://127.0.0.1:8091';
 const LOCAL_FILE = 'file://' + __dirname + '/../index.html';
 const USE_SERVER = true;  // Server is the supported launch method per README.
 const ENTRY_URL = GAME_URL;  // FD-001-A2: test.html removed

@@ -89,11 +89,16 @@ class FusionGame {
     this.nextCtx = this.nextCanvas ? this.nextCanvas.getContext('2d') : null;
     this.nextCanvasDesk = document.getElementById('next-canvas-desk');
     this.nextCtxDesk = this.nextCanvasDesk ? this.nextCanvasDesk.getContext('2d') : null;
+    this.boardArt = null;
+    if (typeof Image !== 'undefined') {
+      this.boardArt = new Image();
+      this.boardArt.src = 'fusion-chamber-v1.png';
+    }
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
 
-    this.physics = new Physics(0.35, 0.96, 0.25);  // FD-002: snappier gravity + restitution
+    this.physics = new Physics(0.42, 0.994, 0.04);
     this.entities = [];
     this.score = 0;
     this.highScore = 0;
@@ -590,10 +595,13 @@ class FusionGame {
     const shapes = this.getShapes();
     const s = shapes[this.currentShape];
     const deathLine = this.getDeathLine();
-    const startY = Math.min(deathLine - s.radius - 10, this.canvas.height * 0.15);
+    // Production sprites extend slightly beyond their collision circle. Keep
+    // the complete authored silhouette on-canvas while it waits to drop.
+    const visibleHalfHeight = s.radius * 1.14;
+    const startY = Math.max(visibleHalfHeight + 4, deathLine - s.radius * 0.55);
     this.entities.push({
       x: this.dropX, y: startY,
-      vx: 0, vy: 2 * this.getPhysicsSpeed(),
+      vx: 0, vy: 0.65 * Math.min(this.getPhysicsSpeed(), 1.12),
       radius: s.radius, shapeType: this.currentShape,
       active: true, settleTimer: 0,
       spawnScale: 0, targetScale: 1,
@@ -634,14 +642,15 @@ class FusionGame {
       e.shapeType = transformed.shapeType;
       e.radius = transformed.radius;
     }
-    this.physics = new Physics(0.3 * this.getPhysicsSpeed(), 0.98, 0.2);
+    this.physics = new Physics(0.42 * Math.min(this.getPhysicsSpeed(), 1.12), 0.994, 0.04);
     this.sounds.playLevelComplete();
     this.renderShapeChain();
     // FD-002: bigger, brighter level-up banner.
     this.scorePopups = this.scorePopups || [];
     this.scorePopups.push({
       x: this.canvas.width / 2, y: this.canvas.height / 2,
-      score: 'LEVEL ' + this.level, life: 2.0, scale: 2.4, color: '#ffd700', big: true,
+      score: 'WORLD ' + this.level, subtitle: this.currentTheme.name,
+      life: 2.0, scale: 1.8, color: '#f4f1e8', big: true,
     });
   }
 
@@ -730,19 +739,23 @@ class FusionGame {
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
 
       // FD-002: merge particles — denser burst, slightly faster velocities for impact.
-      const count = newType >= 5 ? 22 : 14;
+      const count = newType >= 5 ? 24 : 16;
       for (let p = 0; p < count; p++) {
-        const angle = (p / count) * Math.PI * 2;
+        const angle = (p / count) * Math.PI * 2 + Math.random() * 0.16;
+        const speed = 1.7 + Math.random() * (newType >= 5 ? 4.2 : 2.8);
         this.mergeParticles.push({ x: mx, y: my,
-          vx: Math.cos(angle) * (3 + Math.random() * 4),
-          vy: Math.sin(angle) * (3 + Math.random() * 4),
-          life: 1.0, color: newS.glow, size: 4 + Math.random() * 5,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.0, color: p % 4 === 0 ? '#f4f1e8' : newS.glow,
+          size: 3 + Math.random() * 5, rotation: angle,
+          spin: (Math.random() - 0.5) * 0.24, kind: p % 3 === 0 ? 'spark' : 'shard',
         });
       }
 
       this.entities.push({
         x: mx, y: my - 2,
-        vx: (a.vx + b.vx) * 0.3, vy: -1.5,
+        vx: (a.vx + b.vx) * 0.22,
+        vy: Math.min((a.vy + b.vy) * 0.12, 0.15),
         radius: newS.radius, shapeType: newType,
         active: true, settleTimer: 0,
         spawnScale: 0.1, targetScale: 1,
@@ -755,7 +768,7 @@ class FusionGame {
       this.score += newS.score + bonusScore;
       this.updateScoreDisplay();
       this.addScorePopup(mx, my - 30, newS.score + bonusScore);
-      this.addMergeFlash(mx, my);
+      this.addMergeFlash(mx, my, newS.glow);
       this.sounds.playMerge(newType);
       this.mergesCount++;
       // FD-002: subtle shake on every merge (existing logic shakes only
@@ -780,7 +793,7 @@ class FusionGame {
         const chainBonus = (this._chainLength - 2) * 3;
         this.score += chainBonus;
         this.updateScoreDisplay();
-        this.addScorePopup(mx, my - 60, chainBonus);
+        this.addScorePopup(mx, my - 60, chainBonus, 'CHAIN x' + this._chainLength);
       }
       this.checkAchievements();
     }
@@ -838,13 +851,16 @@ class FusionGame {
     }
 
     // Update particles
-    for (const p of this.mergeParticles) { p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= 0.04; }
+    for (const p of this.mergeParticles) {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.09; p.vx *= 0.985;
+      p.rotation = (p.rotation || 0) + (p.spin || 0); p.life -= 0.035;
+    }
     this.mergeParticles = this.mergeParticles.filter(p => p.life > 0);
 
     for (const p of this.scorePopups) { p.y -= 1.5; p.life -= 0.025; p.scale = 1 + (1 - p.life) * 0.3; }
     this.scorePopups = this.scorePopups.filter(p => p.life > 0);
 
-    for (const f of this.mergeFlashes) { f.life -= 0.05; f.radius += 2; }
+    for (const f of this.mergeFlashes) { f.life -= 0.045; f.radius += f.growth || 3.6; }
     this.mergeFlashes = this.mergeFlashes.filter(f => f.life > 0);
 
     // Phase 2 — achievement toast lifecycle. Show one at a time.
@@ -887,23 +903,20 @@ class FusionGame {
     }
     // FD-002: vertical gradient background — dark at top, slightly lighter at
     // bottom of the canvas so the player's eye is drawn to the play area.
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-    bgGrad.addColorStop(0, '#0a0d12');
-    bgGrad.addColorStop(1, '#141a22');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.fillStyle = hexToRgba(bgTint, 0.06);
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Grid
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x < this.canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, this.canvas.height); ctx.stroke(); }
-    for (let y = 0; y < this.canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.canvas.width, y); ctx.stroke(); }
-
-    // Border glow
-    ctx.beginPath(); ctx.roundRect(4, 4, this.canvas.width - 8, this.canvas.height - 8, 8);
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    const artReady = this.boardArt && this.boardArt.complete && this.boardArt.naturalWidth > 0 && typeof ctx.drawImage === 'function';
+    if (artReady) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(this.boardArt, 0, 0, this.canvas.width, this.canvas.height);
+    } else {
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+      bgGrad.addColorStop(0, '#080a18');
+      bgGrad.addColorStop(1, '#17102d');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.fillStyle = hexToRgba(bgTint, 0.035);
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
 
     // Death line + danger zone glow (Phase 1).
     // Compute proximity to the line from the highest non-immune entity.
@@ -997,9 +1010,20 @@ class FusionGame {
 
     // Particles
     for (const p of this.mergeParticles) {
-      ctx.save(); ctx.globalAlpha = p.life; ctx.shadowBlur = 10; ctx.shadowColor = p.color;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-      ctx.fillStyle = p.color; ctx.fill(); ctx.restore();
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rotation || 0);
+      ctx.globalAlpha = Math.max(0, p.life); ctx.shadowBlur = 12; ctx.shadowColor = p.color;
+      ctx.fillStyle = p.color;
+      if (p.kind === 'shard') {
+        const length = p.size * (1.3 + p.life);
+        ctx.beginPath();
+        ctx.moveTo(length, 0); ctx.lineTo(0, p.size * .42);
+        ctx.lineTo(-length * .45, 0); ctx.lineTo(0, -p.size * .42);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(0, 0, p.size * p.life, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
     }
 
     // Ambient
@@ -1015,9 +1039,15 @@ class FusionGame {
 
     // Flashes
     for (const f of this.mergeFlashes) {
-      ctx.save(); ctx.globalAlpha = f.life * 0.3;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, f.life);
+      ctx.shadowBlur = 20; ctx.shadowColor = f.color;
       ctx.beginPath(); ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-      ctx.fillStyle = f.color; ctx.fill(); ctx.restore();
+      ctx.strokeStyle = f.color; ctx.lineWidth = Math.max(1, 5 * f.life); ctx.stroke();
+      ctx.globalAlpha = Math.max(0, f.life * .18);
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.radius * .62, 0, Math.PI * 2);
+      ctx.fillStyle = f.color; ctx.fill();
+      ctx.restore();
     }
 
     // Score popups
@@ -1029,8 +1059,13 @@ class FusionGame {
       ctx.fillStyle = p.color;
       ctx.shadowBlur = p.big ? 20 : 10;
       ctx.shadowColor = p.color;
-      const text = p.big ? String(p.score) : '+' + p.score;
+      const text = p.label ? p.label : (p.big ? String(p.score) : '+' + p.score);
       ctx.fillText(text, p.x, p.y);
+      if (p.subtitle) {
+        ctx.font = `900 ${Math.round(13 * Math.max(1, p.scale * .55))}px Inter, sans-serif`;
+        ctx.fillStyle = '#c8ff38'; ctx.shadowBlur = 12; ctx.shadowColor = '#c8ff38';
+        ctx.fillText(String(p.subtitle).toUpperCase(), p.x, p.y + 28);
+      }
       ctx.restore();
     }
 
@@ -1130,13 +1165,15 @@ class FusionGame {
     }
   }
 
-  addScorePopup(x, y, score) {
-    // FD-002: gold tint for any merge popup, bigger baseline scale, longer life.
-    this.scorePopups.push({ x, y, score, life: 1.2, scale: 1.4, color: '#ffd700' });
+  addScorePopup(x, y, score, label = null) {
+    this.scorePopups.push({
+      x, y, score, label, life: label ? 1.5 : 1.15,
+      scale: label ? 1.25 : 1.1, color: label ? '#c8ff38' : '#f4f1e8',
+    });
   }
 
-  addMergeFlash(x, y) {
-    this.mergeFlashes.push({ x, y, radius: 10, life: 1.0, color: '#ffffff' });
+  addMergeFlash(x, y, color = '#bca5ff') {
+    this.mergeFlashes.push({ x, y, radius: 8, growth: 4.2, life: 1.0, color });
   }
 
   // Phase 2 — achievement toast queue. Each toast renders for ~3 s, then fades.
@@ -1221,6 +1258,12 @@ class FusionGame {
     const scoreDesk = document.getElementById('score-desk');
     if (scoreMob) scoreMob.textContent = this.score;
     if (scoreDesk) scoreDesk.textContent = this.score;
+    for (const el of [scoreMob, scoreDesk]) {
+      if (!el || this.reducedMotion) continue;
+      el.classList.remove('score-hit');
+      void el.offsetWidth;
+      el.classList.add('score-hit');
+    }
     if (this.score > this.highScore) { this.highScore = this.score; this.updateHighScoreDisplay(); }
   }
 
@@ -1469,7 +1512,7 @@ class FusionGame {
     this.ambientParticles = [];
     this.level = 1;
     this.currentTheme = THEMES[0];
-    this.physics = new Physics(0.3, 0.98, 0.2);
+    this.physics = new Physics(0.42, 0.994, 0.04);
     this.nextShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.currentShape = this.randomShapeTier(MAX_PREVIEW_TIER);
     this.dropX = this.canvas.width / 2;
