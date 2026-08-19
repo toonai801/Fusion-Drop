@@ -17,7 +17,7 @@
 <!-- Phase 3 — theme color for browser chrome -->
 <meta name="theme-color" content="#0a0a14">
 <!-- Phase 3 — PWA manifest -->
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="style.css?v=38">
 </head>
 <body>
@@ -86,8 +86,8 @@
           <p>Fusion &#8594; Treasure &#8594; Slime &#8594; Potion &#8594; Planet &#8594; Food &#8594; Aquarium &#8594; Dice &#8594; Dungeon &#8594; Wizard &#8594; Cat</p>
         </div>
         <div class="intro-links">
-          <a href="/about.html">About</a>
-          <a href="/privacy.html">Privacy</a>
+          <a href="about.html">About</a>
+          <a href="privacy.html">Privacy</a>
           <button id="btn-toggle-sound" class="link-btn" type="button">🔊 Sound On</button>
         </div>
       </div>
@@ -191,24 +191,33 @@
 // Replaces the supabase-backend.js that was deleted in this phase.
 const backend = {
   async fetchScores() {
-    const r = await fetch('/api/scores');
-    if (!r.ok) return [];
-    return await r.json();
+    try {
+      const r = await fetch('api/scores');
+      if (r.ok) return await r.json();
+    } catch (_) {}
+    try { return JSON.parse(localStorage.getItem('fusion_drop_scores') || '[]'); }
+    catch (_) { return []; }
   },
   async saveScore(name, score, level) {
     // Phase 2 — server requires drops + merges to recompute plausibility.
     const drops = (window.game && window.game.dropsCount) || 0;
     const merges = (window.game && window.game.mergesCount) || 0;
     const mode = (window.game && window.game.mode) || 'classic';
-    const r = await fetch('/api/scores', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, score, level, drops, merges, mode, date: Date.now() })
-    });
-    if (!r.ok) {
-      try { const body = await r.json(); console.warn('saveScore rejected:', body && body.error); } catch (_) {}
-    }
-    return r.ok;
+    const entry = { name, score, level, drops, merges, mode, date: Date.now() };
+    try {
+      const r = await fetch('api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+      if (r.ok) return true;
+    } catch (_) {}
+    const scores = await this.fetchScores();
+    scores.push(entry);
+    scores.sort((a, b) => b.score - a.score);
+    try { localStorage.setItem('fusion_drop_scores', JSON.stringify(scores.slice(0, 50))); }
+    catch (_) { return false; }
+    return true;
   }
 };
 </script>

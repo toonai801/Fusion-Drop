@@ -293,9 +293,7 @@ class FusionGame {
     const scoreEl = banner ? banner.querySelector('.bt-score') : null;
     if (!banner || !scoreEl) return;
     try {
-      const resp = await fetch('/api/scores');
-      if (!resp.ok) { banner.classList.add('hidden'); return; }
-      const scores = await resp.json();
+      const scores = await backend.fetchScores();
       const todayStart = Math.floor(new Date().setHours(0,0,0,0) / 1000) * 1000;
       const todayScores = scores.filter(s => (s.date || 0) >= todayStart);
       if (todayScores.length === 0) { banner.classList.add('hidden'); return; }
