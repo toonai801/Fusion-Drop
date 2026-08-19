@@ -448,11 +448,11 @@ test('SoundManager initializes once', () => {
   sounds.init();
   assert(sounds.ctx === firstCtx, 'Should not reinitialize');
 });
-test('stopAmbient clears state', () => {
+test('ambient audio never creates a sub-bass oscillator', () => {
   const sounds = new SoundManager();
   sounds.init();
   sounds.startAmbient();
-  assert(sounds.ambientOsc !== null, 'Ambient should be active');
+  assert(sounds.ambientOsc === null, 'Ambient should remain silent');
   sounds.stopAmbient();
   assert(sounds.ambientOsc === null, 'Ambient should be cleared');
 });

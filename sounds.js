@@ -168,28 +168,11 @@ class SoundManager {
   // Idempotent: only allocates the oscillator nodes once; subsequent calls just
   // ramp the gain to a target intensity (0..1).
   playWarning(intensity = 1) {
-    if (!this.initialized) this.init();
-    if (!this.ctx) return;
-    if (this.enabled === false) return;
-    if (!this._warningGain) {
-      this._warningOsc = this.ctx.createOscillator();
-      this._warningOsc2 = this.ctx.createOscillator();
-      this._warningGain = this.ctx.createGain();
-      this._warningOsc.type = 'sine';
-      this._warningOsc2.type = 'sine';
-      this._warningOsc.frequency.value = 90;
-      this._warningOsc2.frequency.value = 135;
-      this._warningGain.gain.value = 0;
-      this._warningOsc.connect(this._warningGain);
-      this._warningOsc2.connect(this._warningGain);
-      this._warningGain.connect(this.masterGain);
-      this._warningOsc.start();
-      this._warningOsc2.start();
-    }
-      const target = Math.max(0, Math.min(1, intensity)) * 0.08;
-    const now = this.ctx.currentTime;
-    this._warningGain.gain.cancelScheduledValues(now);
-    this._warningGain.gain.linearRampToValueAtTime(target, now + 0.25);
+    // The old continuous 90/135 Hz warning tone was routed straight into
+    // subwoofers and sounded like electrical feedback. Danger is communicated
+    // visually instead, so never create a sustained low-frequency oscillator.
+    void intensity;
+    this.stopWarning();
   }
 
   stopWarning() {
@@ -199,34 +182,10 @@ class SoundManager {
     this._warningGain.gain.linearRampToValueAtTime(0, now + 0.2);
   }
 
-  // Ambient space drone
+  // Keep ambience silent. The former 60 Hz oscillator with a slow pitch LFO
+  // made subwoofers pulse up and down even while the player was idle.
   startAmbient() {
-    if (!this.initialized) this.init();
-    if (!this.ctx || this.ambientOsc) return;
-    if (this.enabled === false) return;
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(60, this.ctx.currentTime);
-    
-    // Slow modulation
-    const lfo = this.ctx.createOscillator();
-    const lfoGain = this.ctx.createGain();
-    lfo.frequency.setValueAtTime(0.1, this.ctx.currentTime);
-    lfoGain.gain.setValueAtTime(5, this.ctx.currentTime);
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-    lfo.start();
-    
-    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-    
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start();
-    
-    this.ambientOsc = { osc, gain, lfo, lfoGain };
+    this.stopAmbient();
   }
 
   stopAmbient() {
